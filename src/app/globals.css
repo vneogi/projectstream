@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Source Sans 3", system-ui, sans-serif;
+
+  --color-steam-deep: #0c4a6e;
+  --color-steam-mid: #0369a1;
+  --color-steam-sky: #38bdf8;
+  --color-steam-warm: #ea580c;
+  --color-steam-gold: #fbbf24;
+  --color-steam-cream: #fff7ed;
+  --color-steam-ink: #1c1917;
+  --color-steam-muted: #57534e;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-steam-cream text-steam-ink antialiased;
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .hero-grid {
+    background-image:
+      linear-gradient(rgba(12, 74, 110, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(12, 74, 110, 0.08) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .fade-up {
+    animation: fadeUp 0.8s ease-out both;
+  }
+
+  .fade-up-delay {
+    animation: fadeUp 0.8s ease-out 0.15s both;
+  }
+
+  .fade-up-delay-2 {
+    animation: fadeUp 0.8s ease-out 0.3s both;
+  }
+
+  .float-soft {
+    animation: floatSoft 6s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSoft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.prose-steam p {
+  @apply mb-4 leading-relaxed text-steam-muted;
+}
+
+.prose-steam h2 {
+  @apply mt-8 mb-3 text-2xl text-steam-ink;
+}
+
+.prose-steam ul {
+  @apply mb-4 list-disc pl-6 text-steam-muted;
+}
