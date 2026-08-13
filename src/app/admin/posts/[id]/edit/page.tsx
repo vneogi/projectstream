@@ -23,16 +23,13 @@ export default async function EditPostPage({
   const subjects = await listSubjects();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1
-        className="text-3xl text-steam-deep"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Edit article
-      </h1>
-      <div className="mt-8">
+    <section className="section section--tight">
+      <div className="page-glow" />
+      <div className="container container--narrow">
+        <span className="section__eyebrow">Editor</span>
+        <h1 className="section__title">Edit article</h1>
         <PostForm subjects={subjects} post={post} />
       </div>
-    </div>
+    </section>
   );
 }

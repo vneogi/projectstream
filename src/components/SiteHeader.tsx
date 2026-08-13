@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Icon } from "./Icon";
 
 const links = [
   { href: "/browse", label: "Browse" },
@@ -8,35 +13,62 @@ const links = [
 ];
 
 export function SiteHeader() {
-  return (
-    <header className="border-b border-steam-deep/10 bg-steam-cream/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-2">
-          <span
-            className="font-display text-xl tracking-tight text-steam-deep sm:text-2xl"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Project<span className="text-steam-warm">_</span>Steam
-          </span>
-        </Link>
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
-        <nav className="flex items-center gap-1 sm:gap-2">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-md px-2 py-1.5 text-sm text-steam-muted transition-colors hover:text-steam-deep sm:px-3"
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Link
-            href="/submit"
-            className="ml-1 rounded-md bg-steam-deep px-3 py-1.5 text-sm text-white transition hover:bg-steam-mid sm:ml-2"
-          >
-            Share
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  return (
+    <header className="site-header">
+      <div className="container">
+        <nav className="nav">
+          <Link href="/" className="nav__brand">
+            <span className="brand-mark">
+              <Icon name="atom" />
+            </span>
+            Project<span className="brand-accent">_</span>Steam
           </Link>
+
+          <div className="nav__links">
+            {links.map((link) => (
+              <Link key={link.href} href={link.href}>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="nav__actions">
+            <Link href="/submit" className="btn btn--primary btn--sm nav__cta">
+              Share your work
+              <Icon name="arrow-right" />
+            </Link>
+            <button
+              type="button"
+              className="nav__toggle"
+              aria-expanded={open}
+              aria-label={open ? "Close menu" : "Open menu"}
+              onClick={() => setOpen((v) => !v)}
+            >
+              <Icon name={open ? "close" : "menu"} />
+            </button>
+          </div>
         </nav>
+
+        {open && (
+          <div className="nav__panel">
+            {links.map((link) => (
+              <Link key={link.href} href={link.href}>
+                {link.label}
+              </Link>
+            ))}
+            <Link href="/submit" className="btn btn--primary">
+              Share your work
+              <Icon name="arrow-right" />
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );

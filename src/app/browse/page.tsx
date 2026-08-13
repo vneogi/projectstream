@@ -18,41 +18,50 @@ export default async function BrowsePage() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <h1
-        className="text-4xl text-steam-deep"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Browse the library
-      </h1>
-      <p className="mt-3 max-w-2xl text-steam-muted">
-        {posts.length} published articles across {subjects.length} subjects.
-        Pick a subject or scroll through everything below.
-      </p>
-
-      <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {subjects.map((subject) => (
-          <SubjectCard
-            key={subject.id}
-            subject={subject}
-            count={counts[subject.slug] ?? 0}
-          />
-        ))}
-      </div>
-
-      <div className="mt-16 border-t border-steam-deep/10 pt-12">
-        <h2
-          className="text-2xl text-steam-deep"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          All articles
-        </h2>
-        <div className="mt-8 grid gap-10 sm:grid-cols-2">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
+    <>
+      <section className="section section--tight">
+        <div className="page-glow" />
+        <div className="container">
+          <span className="section__eyebrow">The library</span>
+          <h1 className="section__title">Browse everything</h1>
+          <p className="section__lead">
+            {posts.length} published article{posts.length === 1 ? "" : "s"}{" "}
+            across {subjects.length} subjects. Start with a subject, or scroll
+            through the full list below.
+          </p>
+          <div className="card-grid card-grid--3">
+            {subjects.map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                count={counts[subject.slug] ?? 0}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <section className="section section--tight">
+        <div className="container">
+          <div className="section__head">
+            <div>
+              <span className="section__eyebrow">All articles</span>
+              <h2 className="section__title">Every published piece</h2>
+            </div>
+          </div>
+          {posts.length === 0 ? (
+            <div className="empty-state">
+              <p>No articles published yet.</p>
+            </div>
+          ) : (
+            <div className="card-grid card-grid--3">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    </>
   );
 }

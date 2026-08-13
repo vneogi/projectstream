@@ -1,59 +1,82 @@
+import { Icon } from "@/components/Icon";
 import { siteConfig } from "@/lib/site";
 
 export const metadata = {
-  title: "Submit content",
+  title: "Share your work",
 };
 
+const guidelines = [
+  "Your name — or tell us you would rather stay anonymous",
+  "Class and school, if you want the credit",
+  "Subject and topic, for example Physics — optics",
+  "Short paragraphs, clear steps, and examples where you can",
+  "Only share work you wrote or have permission to share",
+];
+
 export default function SubmitPage() {
-  const email = siteConfig.submitEmail;
-
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1
-        className="text-4xl text-steam-deep"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Share your knowledge
-      </h1>
-      <p className="mt-4 text-lg text-steam-muted">
-        Email your notes, diagrams, experiments, or explanations. We read
-        everything and publish what helps the community learn.
-      </p>
-
-      <div className="mt-10 border-l-4 border-steam-warm pl-4">
-        <p className="text-sm font-medium uppercase tracking-wide text-steam-warm">
-          Email submissions
+    <section className="section section--tight">
+      <div className="page-glow" />
+      <div className="container container--narrow">
+        <span className="section__eyebrow">Contribute</span>
+        <h1 className="section__title">Share your knowledge</h1>
+        <p className="section__lead">
+          Email your notes, diagrams, experiments, or explanations. We read
+          everything and publish what helps the community learn.
         </p>
-        <p className="mt-2 text-2xl text-steam-deep">{email}</p>
-        <p className="mt-2 text-sm text-steam-muted">
-          Replace this address in the site config with your real inbox before
-          going live.
-        </p>
-      </div>
 
-      <div className="mt-10 space-y-4 text-steam-muted">
-        <h2
-          className="text-xl text-steam-deep"
-          style={{ fontFamily: "var(--font-display)" }}
+        <div className="panel">
+          <span className="card__eyebrow">
+            <Icon name="inbox" />
+            Email submissions
+          </span>
+          <p
+            style={{
+              fontSize: "1.375rem",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              marginBlock: "10px 16px",
+            }}
+          >
+            {siteConfig.submitEmail}
+          </p>
+          <a
+            href={`mailto:${siteConfig.submitEmail}?subject=Project_Steam submission`}
+            className="btn btn--primary"
+          >
+            Write an email
+            <Icon name="arrow-right" />
+          </a>
+        </div>
+
+        <div className="panel panel--soft" style={{ marginTop: "24px" }}>
+          <h2 className="feature__title">What to include</h2>
+          <ul className="join__list" style={{ marginTop: "16px" }}>
+            {guidelines.map((item) => (
+              <li
+                key={item}
+                style={{
+                  background: "#fff",
+                  borderColor: "var(--border)",
+                  color: "var(--text-2)",
+                }}
+              >
+                <Icon name="check" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p
+          className="field__hint"
+          style={{ marginTop: "24px", maxWidth: "560px" }}
         >
-          What to include
-        </h2>
-        <ul className="list-disc space-y-2 pl-6">
-          <li>Your name (or &ldquo;anonymous&rdquo; if you prefer)</li>
-          <li>Class / school (optional)</li>
-          <li>Subject and topic (e.g. Physics — optics)</li>
-          <li>Clear writing — short paragraphs, examples, steps</li>
-          <li>Only share what you wrote or have permission to share</li>
-        </ul>
-      </div>
-
-      <div className="mt-10 border-t border-steam-deep/10 pt-8 text-sm text-steam-muted">
-        <p>
-          Submissions are reviewed before publishing. We may edit lightly for
-          clarity. By submitting, you agree your content can be shared freely
-          for education on this site.
+          Submissions are reviewed before publishing and may be lightly edited
+          for clarity. By submitting, you agree your content can be shared
+          freely for education on this site.
         </p>
       </div>
-    </div>
+    </section>
   );
 }

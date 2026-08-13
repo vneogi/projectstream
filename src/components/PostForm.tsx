@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Post, PostStatus } from "@/lib/types";
-import type { Subject } from "@/lib/types";
+import { useState } from "react";
+import { Icon } from "./Icon";
+import type { Post, PostStatus, Subject } from "@/lib/types";
 
 function slugify(text: string): string {
   return text
@@ -80,112 +80,147 @@ export function PostForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-6 sm:grid-cols-2">
-        <label className="block sm:col-span-2">
-          <span className="text-sm font-medium">Title</span>
-          <input
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            required
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
-          />
+    <form onSubmit={handleSubmit} className="panel form">
+      <div className="field">
+        <label className="field__label" htmlFor="title">
+          Title
         </label>
-        <label className="block">
-          <span className="text-sm font-medium">URL slug</span>
+        <input
+          id="title"
+          className="input"
+          value={title}
+          onChange={(e) => handleTitleChange(e.target.value)}
+          required
+        />
+      </div>
+
+      <div className="form__grid form__grid--2">
+        <div className="field">
+          <label className="field__label" htmlFor="slug">
+            URL slug
+          </label>
           <input
+            id="slug"
+            className="input"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             required
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Subject</span>
+        </div>
+        <div className="field">
+          <label className="field__label" htmlFor="subject">
+            Subject
+          </label>
           <select
+            id="subject"
+            className="select"
             value={subjectSlug}
             onChange={(e) => setSubjectSlug(e.target.value)}
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
           >
             {subjects.map((s) => (
-              <option key={s.slug} value={s.slug}>{s.name}</option>
+              <option key={s.slug} value={s.slug}>
+                {s.name}
+              </option>
             ))}
           </select>
-        </label>
+        </div>
       </div>
 
-      <label className="block">
-        <span className="text-sm font-medium">Short summary</span>
+      <div className="field">
+        <label className="field__label" htmlFor="excerpt">
+          Short summary
+        </label>
         <textarea
+          id="excerpt"
+          className="textarea"
           value={excerpt}
           onChange={(e) => setExcerpt(e.target.value)}
           rows={2}
           required
-          className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
         />
-      </label>
+      </div>
 
-      <label className="block">
-        <span className="text-sm font-medium">Content</span>
-        <p className="text-xs text-steam-muted">Separate paragraphs with a blank line.</p>
+      <div className="field">
+        <label className="field__label" htmlFor="content">
+          Content
+        </label>
+        <p className="field__hint">Separate paragraphs with a blank line.</p>
         <textarea
+          id="content"
+          className="textarea textarea--mono"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={14}
           required
-          className="mt-2 w-full border border-steam-deep/20 px-4 py-2 font-mono text-sm"
         />
-      </label>
+      </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-sm font-medium">Topics (comma-separated)</span>
+      <div className="form__grid form__grid--2">
+        <div className="field">
+          <label className="field__label" htmlFor="topics">
+            Topics
+          </label>
           <input
+            id="topics"
+            className="input"
             value={topics}
             onChange={(e) => setTopics(e.target.value)}
             placeholder="algebra, class-10"
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Status</span>
+          <p className="field__hint">Comma-separated.</p>
+        </div>
+        <div className="field">
+          <label className="field__label" htmlFor="status">
+            Status
+          </label>
           <select
+            id="status"
+            className="select"
             value={status}
             onChange={(e) => setStatus(e.target.value as PostStatus)}
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
           >
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Author name</span>
+        </div>
+        <div className="field">
+          <label className="field__label" htmlFor="author">
+            Author name
+          </label>
           <input
+            id="author"
+            className="input"
             value={authorName}
             onChange={(e) => setAuthorName(e.target.value)}
             required
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">School / class (optional)</span>
+        </div>
+        <div className="field">
+          <label className="field__label" htmlFor="school">
+            School or class
+          </label>
           <input
+            id="school"
+            className="input"
             value={authorSchool}
             onChange={(e) => setAuthorSchool(e.target.value)}
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2"
           />
-        </label>
+          <p className="field__hint">Optional.</p>
+        </div>
       </div>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && (
+        <p className="alert alert--error" role="alert">
+          {error}
+        </p>
+      )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-steam-deep px-6 py-2.5 font-medium text-white hover:bg-steam-mid disabled:opacity-50"
-      >
-        {loading ? "Saving…" : post ? "Update article" : "Create article"}
-      </button>
+      <div>
+        <button type="submit" className="btn btn--primary" disabled={loading}>
+          {loading ? "Saving…" : post ? "Update article" : "Create article"}
+          <Icon name="arrow-right" />
+        </button>
+      </div>
     </form>
   );
 }

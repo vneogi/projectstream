@@ -2,7 +2,21 @@
 
 A student passion-project website to publish STEM and educational content shared by hundreds of students — free for learners across India and the world.
 
-Built with **Next.js**, **Tailwind CSS**, and **Supabase** (optional for production database).
+Built with **Next.js**, a hand-written CSS design system, and **Supabase** (optional for production database).
+
+## Design system
+
+All visual styling lives in `src/app/globals.css` as design tokens plus semantic classes — no CSS framework to learn.
+
+| Token | Value | Used for |
+|-------|-------|----------|
+| `--bg` | `#f7f5fe` | Page background (soft lavender) |
+| `--primary` | `#6d54f5` | Links, icons, accents |
+| `--gradient-primary` | violet → blue | Primary buttons, badges |
+| `--bg-dark` | `#0a0d26` | Dark call-to-action panels |
+| `--radius-pill` / `--radius-xl` | `999px` / `28px` | Buttons / large panels |
+
+Change a token once and it updates everywhere.
 
 ## What's included
 
@@ -104,7 +118,7 @@ Later: automate with Gmail API or inbound email (Resend) creating **drafts** onl
 | `npm run dev` | Local development |
 | `npm run build` | Production build |
 | `npm run start` | Run production build locally |
-| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript check |
 
 ## License
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Icon } from "@/components/Icon";
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
@@ -30,37 +31,44 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16 sm:px-6">
-      <h1
-        className="text-3xl text-steam-deep"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Admin login
-      </h1>
-      <p className="mt-2 text-sm text-steam-muted">
-        For the site owner to publish and edit articles.
-      </p>
+    <section className="section">
+      <div className="page-glow" />
+      <div className="container" style={{ maxWidth: "460px" }}>
+        <span className="section__eyebrow">Editor access</span>
+        <h1 className="section__title">Admin login</h1>
+        <p className="section__lead">
+          For the site owner to review submissions and publish articles.
+        </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-        <label className="block">
-          <span className="text-sm font-medium">Password</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="mt-2 w-full border border-steam-deep/20 px-4 py-2 focus:border-steam-mid focus:outline-none"
-          />
-        </label>
-        {error && <p className="text-sm text-red-700">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-steam-deep py-2.5 font-medium text-white hover:bg-steam-mid disabled:opacity-50"
-        >
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
-    </div>
+        <form onSubmit={handleSubmit} className="panel form">
+          <div className="field">
+            <label className="field__label" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              className="input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && (
+            <p className="alert alert--error" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="btn btn--primary btn--full"
+            disabled={loading}
+          >
+            {loading ? "Signing in…" : "Sign in"}
+            <Icon name="arrow-right" />
+          </button>
+        </form>
+      </div>
+    </section>
   );
 }

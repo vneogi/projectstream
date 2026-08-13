@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { Inter } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const sourceSans = Source_Sans_3({
-  subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -21,12 +16,10 @@ export const metadata: Metadata = {
     default: "Project_Steam — Student STEM knowledge for everyone",
     template: "%s · Project_Steam",
   },
-  description:
-    "A student-led library of STEM and educational content — shared freely for learners across India and the world.",
+  description: siteConfig.description,
   openGraph: {
     title: "Project_Steam",
-    description:
-      "Student-shared STEM knowledge — reviewed, categorized, and free to access.",
+    description: siteConfig.description,
     type: "website",
   },
 };
@@ -37,10 +30,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${sourceSans.variable}`}>
-      <body className="min-h-screen">
+    <html lang="en" className={inter.variable}>
+      <body>
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
         <SiteHeader />
-        <main>{children}</main>
+        <main id="main">{children}</main>
         <SiteFooter />
       </body>
     </html>

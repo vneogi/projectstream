@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
+import { Icon } from "@/components/Icon";
 
 interface Source {
   title: string;
@@ -41,73 +42,75 @@ export default function AskPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1
-        className="text-4xl text-steam-deep"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Ask Project_Steam
-      </h1>
-      <p className="mt-3 text-steam-muted">
-        Answers are grounded in published articles from our library — not
-        generic internet guesses.
-      </p>
+    <section className="section section--tight">
+      <div className="page-glow" />
+      <div className="container container--narrow">
+        <span className="section__eyebrow">Ask AI</span>
+        <h1 className="section__title">Ask Project_Steam</h1>
+        <p className="section__lead">
+          Answers are built from published articles in our library, with the
+          sources shown so you can read further.
+        </p>
 
-      <form onSubmit={handleAsk} className="mt-8 space-y-4">
-        <label className="block">
-          <span className="text-sm font-medium text-steam-ink">Your question</span>
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            rows={4}
-            required
-            placeholder="e.g. How do I balance chemical equations step by step?"
-            className="mt-2 w-full border border-steam-deep/20 bg-white/80 px-4 py-3 text-steam-ink focus:border-steam-mid focus:outline-none focus:ring-2 focus:ring-steam-sky/30"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={loading || !question.trim()}
-          className="bg-steam-deep px-6 py-3 font-medium text-white transition hover:bg-steam-mid disabled:opacity-50"
-        >
-          {loading ? "Thinking…" : "Ask"}
-        </button>
-      </form>
+        <form onSubmit={handleAsk} className="panel form">
+          <div className="field">
+            <label className="field__label" htmlFor="question">
+              Your question
+            </label>
+            <textarea
+              id="question"
+              className="textarea"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              rows={4}
+              required
+              placeholder="e.g. How do I balance chemical equations step by step?"
+            />
+          </div>
+          <div>
+            <button
+              type="submit"
+              className="btn btn--primary"
+              disabled={loading || !question.trim()}
+            >
+              {loading ? "Thinking…" : "Ask"}
+              <Icon name="sparkles" />
+            </button>
+          </div>
+        </form>
 
-      {error && (
-        <p className="mt-6 text-sm text-red-700" role="alert">{error}</p>
-      )}
+        {error && (
+          <p className="alert alert--error" role="alert" style={{ marginTop: "24px" }}>
+            {error}
+          </p>
+        )}
 
-      {answer && (
-        <div className="mt-10 border-t border-steam-deep/10 pt-8">
-          <h2
-            className="text-xl text-steam-deep"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Answer
-          </h2>
-          <p className="mt-4 leading-relaxed text-steam-muted">{answer}</p>
+        {answer && (
+          <div className="panel" style={{ marginTop: "24px" }}>
+            <span className="card__eyebrow">
+              <Icon name="sparkles" />
+              Answer
+            </span>
+            <p className="prose" style={{ marginTop: "12px" }}>
+              {answer}
+            </p>
 
-          {sources.length > 0 && (
-            <div className="mt-8">
-              <p className="text-sm font-medium text-steam-ink">Sources</p>
-              <ul className="mt-3 space-y-2">
-                {sources.map((s) => (
-                  <li key={s.slug}>
-                    <Link
-                      href={`/posts/${s.slug}`}
-                      className="text-steam-mid hover:text-steam-deep"
-                    >
-                      {s.title}
+            {sources.length > 0 && (
+              <div style={{ marginTop: "28px" }}>
+                <p className="footer__nav-title">Sources</p>
+                <div className="card-grid" style={{ marginTop: "12px" }}>
+                  {sources.map((s) => (
+                    <Link key={s.slug} href={`/posts/${s.slug}`} className="card">
+                      <h3 className="card__title">{s.title}</h3>
+                      <p className="card__desc">{s.excerpt}</p>
                     </Link>
-                    <p className="text-xs text-steam-muted">{s.excerpt}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

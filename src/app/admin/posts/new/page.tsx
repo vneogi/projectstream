@@ -14,19 +14,16 @@ export default async function NewPostPage() {
   const subjects = await listSubjects();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1
-        className="text-3xl text-steam-deep"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        New article
-      </h1>
-      <p className="mt-2 text-steam-muted">
-        Paste content from an email submission, categorize, and publish.
-      </p>
-      <div className="mt-8">
+    <section className="section section--tight">
+      <div className="page-glow" />
+      <div className="container container--narrow">
+        <span className="section__eyebrow">Editor</span>
+        <h1 className="section__title">New article</h1>
+        <p className="section__lead">
+          Paste content from an email submission, categorize it, and publish.
+        </p>
         <PostForm subjects={subjects} />
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,14 +1,61 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import { PostCard } from "@/components/PostCard";
 import { SearchBar } from "@/components/SearchBar";
 import { SubjectCard } from "@/components/SubjectCard";
 import { listPublishedPosts, listSubjects } from "@/lib/data";
 
+const steps = [
+  {
+    icon: "send" as const,
+    title: "Students share",
+    desc: "Hundreds of students email their notes, experiments, and explanations.",
+  },
+  {
+    icon: "inbox" as const,
+    title: "We review",
+    desc: "Every submission is read and checked for clarity and accuracy.",
+  },
+  {
+    icon: "tag" as const,
+    title: "We organize",
+    desc: "Content is sorted by subject and topic so it is easy to find.",
+  },
+  {
+    icon: "users" as const,
+    title: "Everyone learns",
+    desc: "Published free for any student with an internet connection.",
+  },
+];
+
+const features = [
+  {
+    icon: "search" as const,
+    title: "Search that works",
+    desc: "Find explanations by subject, topic, or class level in seconds.",
+    href: "/search",
+    linkLabel: "Try search",
+  },
+  {
+    icon: "sparkles" as const,
+    title: "Ask AI, grounded",
+    desc: "Get answers built only from our published articles, with sources shown.",
+    href: "/ask",
+    linkLabel: "Ask a question",
+  },
+  {
+    icon: "book" as const,
+    title: "Written by students",
+    desc: "Real explanations from peers who just learned it themselves.",
+    href: "/browse",
+    linkLabel: "Browse library",
+  },
+];
+
 export default async function HomePage() {
   const subjects = await listSubjects();
   const posts = await listPublishedPosts();
-  const recent = posts.slice(0, 4);
+  const recent = posts.slice(0, 3);
 
   const counts = Object.fromEntries(
     subjects.map((s) => [
@@ -19,81 +66,148 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative min-h-[88vh] overflow-hidden">
-        <Image
-          src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=2400&q=80"
-          alt="Students learning together in a classroom"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-steam-deep/85 via-steam-deep/70 to-steam-cream" />
+      <section className="hero">
+        <div className="page-glow" />
+        <div className="container hero__inner">
+          <div className="hero__grid">
+            <div className="reveal">
+              <span className="hero__eyebrow">Student passion project</span>
+              <h1 className="hero__title">
+                STEM knowledge, shared by students
+                <span className="hero__title-dot">.</span>
+              </h1>
+              <p className="hero__lead">
+                Free, clear, and open to every learner.
+              </p>
+              <p className="hero__desc">
+                Hundreds of students send us their best notes and ideas. We
+                organize them by subject so millions of learners across India
+                and the world can find them.
+              </p>
+              <div className="hero__ctas">
+                <Link href="/browse" className="btn btn--primary">
+                  Explore the library
+                  <Icon name="arrow-right" />
+                </Link>
+                <Link href="/submit" className="btn btn--secondary">
+                  Share your work
+                </Link>
+              </div>
+              <div className="stat-row">
+                <div>
+                  <p className="stat__value">{posts.length}</p>
+                  <p className="stat__label">Published articles</p>
+                </div>
+                <div>
+                  <p className="stat__value">{subjects.length}</p>
+                  <p className="stat__label">Subjects covered</p>
+                </div>
+                <div>
+                  <p className="stat__value">Free</p>
+                  <p className="stat__label">Always, for everyone</p>
+                </div>
+              </div>
+            </div>
 
-        <div className="hero-grid absolute inset-0 opacity-30" />
-
-        <div className="relative mx-auto flex min-h-[88vh] max-w-6xl flex-col justify-end px-4 pb-16 pt-28 sm:px-6 sm:pb-20">
-          <p className="fade-up text-sm font-medium uppercase tracking-[0.2em] text-steam-sky">
-            Student passion project
-          </p>
-          <h1
-            className="fade-up-delay mt-4 max-w-3xl text-5xl leading-[1.05] text-white sm:text-6xl lg:text-7xl"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Project<span className="text-steam-gold">_</span>Steam
-          </h1>
-          <p className="fade-up-delay-2 mt-5 max-w-xl text-lg leading-relaxed text-white/90 sm:text-xl">
-            Hundreds of students share STEM notes and ideas by email. We
-            organize them here — free for millions who need clear, honest
-            learning.
-          </p>
-          <div className="fade-up-delay-2 mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/browse"
-              className="bg-steam-warm px-6 py-3 font-medium text-white transition hover:bg-white hover:text-steam-deep"
-            >
-              Explore subjects
-            </Link>
-            <Link
-              href="/submit"
-              className="border border-white/40 px-6 py-3 font-medium text-white transition hover:bg-white/10"
-            >
-              Share your knowledge
-            </Link>
+            <div className="hero__art reveal" style={{ "--d": "0.15s" } as React.CSSProperties}>
+              <div className="art-card">
+                <div className="art-card__head">
+                  <span className="art-card__dot" />
+                  <span className="art-card__dot" />
+                  <span className="art-card__dot" />
+                  <span className="art-card__label">Latest submissions</span>
+                </div>
+                {(recent.length > 0 ? recent : posts.slice(0, 3)).map((post) => (
+                  <div key={post.id} className="art-row">
+                    <span className="art-row__icon">
+                      <Icon name="book" />
+                    </span>
+                    <div>
+                      <p className="art-row__title">{post.title}</p>
+                      <p className="art-row__meta">{post.subjectName}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <span className="art-badge">
+                <Icon name="check" />
+                Reviewed before publishing
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="max-w-2xl">
-          <h2
-            className="text-3xl text-steam-deep sm:text-4xl"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Find what you need
-          </h2>
-          <p className="mt-3 text-steam-muted">
-            Search across physics, chemistry, math, coding, and more — written
-            by students like you.
-          </p>
-        </div>
-        <div className="mt-8">
-          <SearchBar large />
+      <section className="section section--tight">
+        <div className="container">
+          <div className="panel">
+            <SearchBar />
+          </div>
         </div>
       </section>
 
-      <section className="border-y border-steam-deep/10 bg-white/40">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <h2
-            className="text-3xl text-steam-deep"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Subjects
+      <section className="section how">
+        <div className="container">
+          <span className="section__eyebrow section__eyebrow--center">
+            How it works
+          </span>
+          <h2 className="section__title section__title--center">
+            From an email to a lesson anyone can find
           </h2>
-          <p className="mt-2 text-steam-muted">
-            Every article is categorized so you can browse by topic.
+          <div className="how__grid">
+            {steps.map((step, i) => (
+              <div
+                key={step.title}
+                className="how__step reveal"
+                style={{ "--d": `${i * 0.08}s` } as React.CSSProperties}
+              >
+                <span className="how__icon">
+                  <span className="how__badge">{i + 1}</span>
+                  <Icon name={step.icon} />
+                </span>
+                <h3 className="how__step-title">{step.title}</h3>
+                <p className="how__step-desc">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--tight">
+        <div className="container">
+          <div className="features">
+            <div className="features__grid">
+              {features.map((feature) => (
+                <div key={feature.title} className="feature">
+                  <span className="feature__icon">
+                    <Icon name={feature.icon} />
+                  </span>
+                  <h3 className="feature__title">{feature.title}</h3>
+                  <p className="feature__desc">{feature.desc}</p>
+                  <Link href={feature.href} className="link-arrow">
+                    {feature.linkLabel}
+                    <Icon name="arrow-right" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <span className="section__eyebrow section__eyebrow--center">
+            Subjects
+          </span>
+          <h2 className="section__title section__title--center">
+            Pick where you want to start
+          </h2>
+          <p className="section__lead section__lead--center">
+            Every article is filed under a subject and tagged by topic, so you
+            can go from curiosity to explanation quickly.
           </p>
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="card-grid card-grid--3">
             {subjects.map((subject) => (
               <SubjectCard
                 key={subject.id}
@@ -105,30 +219,65 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2
-              className="text-3xl text-steam-deep"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Recent articles
-            </h2>
-            <p className="mt-2 text-steam-muted">
-              Reviewed and published for the community.
-            </p>
+      <section className="section section--tight">
+        <div className="container">
+          <div className="section__head">
+            <div>
+              <span className="section__eyebrow">Fresh from the community</span>
+              <h2 className="section__title">Recent articles</h2>
+            </div>
+            <Link href="/browse" className="link-arrow">
+              View all
+              <Icon name="arrow-right" />
+            </Link>
           </div>
-          <Link
-            href="/browse"
-            className="text-sm font-medium text-steam-mid hover:text-steam-deep"
-          >
-            View all →
-          </Link>
+          <div className="card-grid card-grid--3">
+            {recent.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
         </div>
-        <div className="mt-10 grid gap-10 sm:grid-cols-2">
-          {recent.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
+      </section>
+
+      <section className="section section--tight">
+        <div className="container">
+          <div className="join">
+            <div className="join__grid">
+              <div className="join__copy">
+                <h2 className="join__title">
+                  You learned something. Someone else needs it.
+                </h2>
+                <p className="join__desc">
+                  If you have notes that helped you understand a hard topic,
+                  send them in. A clear explanation can change how another
+                  student sees a subject.
+                </p>
+                <div className="join__ctas">
+                  <Link href="/submit" className="btn btn--light">
+                    Share your work
+                    <Icon name="arrow-right" />
+                  </Link>
+                  <Link href="/about" className="btn btn--outline-light">
+                    About the project
+                  </Link>
+                </div>
+              </div>
+              <ul className="join__list">
+                <li>
+                  <Icon name="check" />
+                  Any subject in science, maths, coding, or engineering
+                </li>
+                <li>
+                  <Icon name="check" />
+                  Notes, diagrams, experiments, or study tips
+                </li>
+                <li>
+                  <Icon name="check" />
+                  Credit stays with you — or stay anonymous
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
     </>

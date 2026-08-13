@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Icon } from "@/components/Icon";
 import { getPost, listPublishedPosts } from "@/lib/data";
 
 export async function generateStaticParams() {
@@ -29,58 +30,60 @@ export default async function PostPage({
   const paragraphs = post.content.split("\n\n").filter(Boolean);
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Link
-        href={`/subjects/${post.subjectSlug}`}
-        className="text-sm font-medium uppercase tracking-wide text-steam-warm"
-      >
-        {post.subjectName}
-      </Link>
-      <h1
-        className="mt-3 text-4xl leading-tight text-steam-deep sm:text-5xl"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {post.title}
-      </h1>
-      <p className="mt-4 text-lg text-steam-muted">{post.excerpt}</p>
-      <div className="mt-6 flex flex-wrap gap-3 text-sm text-steam-muted">
-        <span>By {post.authorName}</span>
-        {post.authorSchool && <span>· {post.authorSchool}</span>}
-        <span>· {new Date(post.createdAt).toLocaleDateString("en-IN")}</span>
-      </div>
-      {post.topics.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {post.topics.map((topic) => (
-            <Link
-              key={topic}
-              href={`/search?q=${encodeURIComponent(topic)}`}
-              className="text-xs text-steam-muted hover:text-steam-deep"
-            >
-              #{topic}
+    <section className="section section--tight">
+      <div className="page-glow" />
+      <div className="container container--narrow">
+        <article>
+          <header className="article__header">
+            <Link href={`/subjects/${post.subjectSlug}`} className="card__eyebrow">
+              {post.subjectName}
             </Link>
-          ))}
+            <h1 className="article__title">{post.title}</h1>
+            <p className="article__lead">{post.excerpt}</p>
+            <div className="meta-row">
+              <span>By {post.authorName}</span>
+              {post.authorSchool && <span>{post.authorSchool}</span>}
+              <span>{new Date(post.createdAt).toLocaleDateString("en-IN")}</span>
+            </div>
+            {post.topics.length > 0 && (
+              <div className="tag-row" style={{ marginTop: "16px" }}>
+                {post.topics.map((topic) => (
+                  <Link
+                    key={topic}
+                    href={`/search?q=${encodeURIComponent(topic)}`}
+                    className="tag"
+                  >
+                    {topic}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </header>
+
+          <div className="prose">
+            {paragraphs.map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+        </article>
+
+        <div className="panel panel--soft" style={{ marginTop: "48px" }}>
+          <h2 className="feature__title">Found this helpful?</h2>
+          <p className="card__desc" style={{ marginBottom: "20px" }}>
+            Share your own notes so another student can learn the same way, or
+            ask a question answered from our library.
+          </p>
+          <div className="hero__ctas" style={{ marginBottom: 0 }}>
+            <Link href="/submit" className="btn btn--primary">
+              Share your work
+              <Icon name="arrow-right" />
+            </Link>
+            <Link href="/ask" className="btn btn--secondary">
+              Ask a question
+            </Link>
+          </div>
         </div>
-      )}
-
-      <div className="prose-steam mt-10 border-t border-steam-deep/10 pt-10">
-        {paragraphs.map((para, i) => (
-          <p key={i}>{para}</p>
-        ))}
       </div>
-
-      <div className="mt-12 border-t border-steam-deep/10 pt-8">
-        <p className="text-sm text-steam-muted">
-          Found this helpful?{" "}
-          <Link href="/submit" className="text-steam-mid underline">
-            Share your own notes
-          </Link>{" "}
-          or{" "}
-          <Link href="/ask" className="text-steam-mid underline">
-            ask a question
-          </Link>{" "}
-          grounded in our library.
-        </p>
-      </div>
-    </article>
+    </section>
   );
 }

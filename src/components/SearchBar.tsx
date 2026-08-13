@@ -1,15 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Icon } from "./Icon";
 
-export function SearchBar({
-  initialQuery = "",
-  large = false,
-}: {
-  initialQuery?: string;
-  large?: boolean;
-}) {
+export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
   const router = useRouter();
 
@@ -20,28 +15,25 @@ export function SearchBar({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
-      <label className="sr-only" htmlFor="site-search">Search articles</label>
-      <div className={`flex gap-2 ${large ? "flex-col sm:flex-row" : ""}`}>
+    <form onSubmit={handleSubmit} className="search-form">
+      <label className="visually-hidden" htmlFor="site-search">
+        Search articles
+      </label>
+      <div className="search-field">
+        <Icon name="search" />
         <input
           id="site-search"
           type="search"
+          className="search-input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search physics, coding, class 10, experiments…"
-          className={`w-full border border-steam-deep/20 bg-white/80 px-4 text-steam-ink placeholder:text-steam-muted/60 focus:border-steam-mid focus:outline-none focus:ring-2 focus:ring-steam-sky/30 ${
-            large ? "py-3 text-base" : "py-2 text-sm"
-          }`}
+          placeholder="Try “photosynthesis”, “quadratic equations”, “python”…"
         />
-        <button
-          type="submit"
-          className={`bg-steam-warm font-medium text-white transition hover:bg-steam-deep ${
-            large ? "px-6 py-3 text-base" : "px-4 py-2 text-sm"
-          }`}
-        >
-          Search
-        </button>
       </div>
+      <button type="submit" className="btn btn--primary">
+        Search
+        <Icon name="arrow-right" />
+      </button>
     </form>
   );
 }

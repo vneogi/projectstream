@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Icon } from "@/components/Icon";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { listAllPosts } from "@/lib/data";
 
@@ -12,79 +13,75 @@ export default async function AdminPage() {
   if (!authed) redirect("/admin/login");
 
   const posts = await listAllPosts();
+  const published = posts.filter((p) => p.status === "published").length;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1
-            className="text-3xl text-steam-deep"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Admin dashboard
-          </h1>
-          <p className="mt-2 text-steam-muted">
-            Review email submissions and publish to the library.
-          </p>
+    <section className="section section--tight">
+      <div className="page-glow" />
+      <div className="container">
+        <div className="section__head">
+          <div>
+            <span className="section__eyebrow">Editor</span>
+            <h1 className="section__title">Admin dashboard</h1>
+            <p className="section__lead">
+              {published} published · {posts.length - published} draft. Review
+              email submissions and publish them to the library.
+            </p>
+          </div>
+          <Link href="/admin/posts/new" className="btn btn--primary">
+            New article
+            <Icon name="arrow-right" />
+          </Link>
         </div>
-        <Link
-          href="/admin/posts/new"
-          className="bg-steam-warm px-5 py-2.5 font-medium text-white hover:bg-steam-deep"
-        >
-          New article
-        </Link>
-      </div>
 
-      <div className="mt-10 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-steam-deep/10 text-steam-muted">
-            <tr>
-              <th className="py-3 pr-4">Title</th>
-              <th className="py-3 pr-4">Subject</th>
-              <th className="py-3 pr-4">Status</th>
-              <th className="py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {posts.map((post) => (
-              <tr key={post.id} className="border-b border-steam-deep/5">
-                <td className="py-3 pr-4 font-medium text-steam-ink">
-                  {post.title}
-                </td>
-                <td className="py-3 pr-4 text-steam-muted">{post.subjectName}</td>
-                <td className="py-3 pr-4">
-                  <span
-                    className={
-                      post.status === "published"
-                        ? "text-green-700"
-                        : "text-steam-warm"
-                    }
-                  >
-                    {post.status}
-                  </span>
-                </td>
-                <td className="py-3">
-                  <Link
-                    href={`/admin/posts/${post.id}/edit`}
-                    className="text-steam-mid hover:text-steam-deep"
-                  >
-                    Edit
-                  </Link>
-                </td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {posts.map((post) => (
+                <tr key={post.id}>
+                  <td style={{ fontWeight: 600 }}>{post.title}</td>
+                  <td style={{ color: "var(--text-muted)" }}>
+                    {post.subjectName}
+                  </td>
+                  <td>
+                    <span
+                      className={
+                        post.status === "published"
+                          ? "status status--published"
+                          : "status status--draft"
+                      }
+                    >
+                      {post.status}
+                    </span>
+                  </td>
+                  <td>
+                    <Link
+                      href={`/admin/posts/${post.id}/edit`}
+                      className="link-arrow"
+                    >
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <form action="/api/admin/logout" method="POST" className="mt-10">
-        <button
-          type="submit"
-          className="text-sm text-steam-muted underline hover:text-steam-deep"
-        >
-          Log out
-        </button>
-      </form>
-    </div>
+        <form action="/api/admin/logout" method="POST" style={{ marginTop: "32px" }}>
+          <button type="submit" className="btn btn--secondary btn--sm">
+            Log out
+          </button>
+        </form>
+      </div>
+    </section>
   );
 }
