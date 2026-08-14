@@ -4,6 +4,7 @@ import { PostCard } from "@/components/PostCard";
 import { SearchBar } from "@/components/SearchBar";
 import { SubjectCard } from "@/components/SubjectCard";
 import { listPublishedPosts, listSubjects } from "@/lib/data";
+import { siteCopy } from "@/lib/site";
 
 const steps = [
   {
@@ -71,19 +72,13 @@ export default async function HomePage() {
         <div className="container hero__inner">
           <div className="hero__grid">
             <div className="reveal">
-              <span className="hero__eyebrow">Student passion project</span>
+              <span className="hero__eyebrow">{siteCopy.heroEyebrow}</span>
               <h1 className="hero__title">
-                STEM knowledge, shared by students
+                {siteCopy.heroTitle}
                 <span className="hero__title-dot">.</span>
               </h1>
-              <p className="hero__lead">
-                Free, clear, and open to every learner.
-              </p>
-              <p className="hero__desc">
-                Hundreds of students send us their best notes and ideas. We
-                organize them by subject so millions of learners across India
-                and the world can find them.
-              </p>
+              <p className="hero__lead">{siteCopy.heroLead}</p>
+              <p className="hero__desc">{siteCopy.heroDesc}</p>
               <div className="hero__ctas">
                 <Link href="/browse" className="btn btn--primary">
                   Explore the library
@@ -152,7 +147,7 @@ export default async function HomePage() {
             How it works
           </span>
           <h2 className="section__title section__title--center">
-            From an email to a lesson anyone can find
+            {siteCopy.howTitle}
           </h2>
           <div className="how__grid">
             {steps.map((step, i) => (
@@ -201,11 +196,10 @@ export default async function HomePage() {
             Subjects
           </span>
           <h2 className="section__title section__title--center">
-            Pick where you want to start
+            {siteCopy.subjectsTitle}
           </h2>
           <p className="section__lead section__lead--center">
-            Every article is filed under a subject and tagged by topic, so you
-            can go from curiosity to explanation quickly.
+            {siteCopy.subjectsLead}
           </p>
           <div className="card-grid card-grid--3">
             {subjects.map((subject) => (
@@ -224,7 +218,7 @@ export default async function HomePage() {
           <div className="section__head">
             <div>
               <span className="section__eyebrow">Fresh from the community</span>
-              <h2 className="section__title">Recent articles</h2>
+              <h2 className="section__title">{siteCopy.recentTitle}</h2>
             </div>
             <Link href="/browse" className="link-arrow">
               View all
@@ -244,14 +238,8 @@ export default async function HomePage() {
           <div className="join">
             <div className="join__grid">
               <div className="join__copy">
-                <h2 className="join__title">
-                  You learned something. Someone else needs it.
-                </h2>
-                <p className="join__desc">
-                  If you have notes that helped you understand a hard topic,
-                  send them in. A clear explanation can change how another
-                  student sees a subject.
-                </p>
+                <h2 className="join__title">{siteCopy.joinTitle}</h2>
+                <p className="join__desc">{siteCopy.joinDesc}</p>
                 <div className="join__ctas">
                   <Link href="/submit" className="btn btn--light">
                     Share your work

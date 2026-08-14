@@ -135,7 +135,7 @@ export const seedPosts: Post[] = [
     excerpt:
       "Use a few lines of code to simulate motion or visualize data — coding is a tool for thinking, not just jobs.",
     content:
-      "Python is readable and free. Install from python.org or use an online editor.\n\nExample — position of a ball with constant velocity:\n\nfor t in range(0, 11):\n    position = 5 * t\n    print(f\"Time {t}s: position {position} m\")\n\nChange 5 to try different speeds. You have built a tiny simulation.\n\nNext steps: plot with matplotlib, or try turtle graphics for geometry. Share your scripts with Project_Steam — other students can run and learn from them.",
+      "Python is readable and free. Install from python.org or use an online editor.\n\nExample — position of a ball with constant velocity:\n\nfor t in range(0, 11):\n    position = 5 * t\n    print(f\"Time {t}s: position {position} m\")\n\nChange 5 to try different speeds. You have built a tiny simulation.\n\nNext steps: plot with matplotlib, or try turtle graphics for geometry. Share your scripts with Project Steam — other students can run and learn from them.",
     subjectId: "computer-science",
     subjectSlug: "computer-science",
     subjectName: "Computer Science",

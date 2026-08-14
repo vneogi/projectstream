@@ -1,5 +1,5 @@
 import { Icon } from "@/components/Icon";
-import { siteConfig } from "@/lib/site";
+import { siteConfig, siteCopy } from "@/lib/site";
 
 export const metadata = {
   title: "Share your work",
@@ -19,11 +19,8 @@ export default function SubmitPage() {
       <div className="page-glow" />
       <div className="container container--narrow">
         <span className="section__eyebrow">Contribute</span>
-        <h1 className="section__title">Share your knowledge</h1>
-        <p className="section__lead">
-          Email your notes, diagrams, experiments, or explanations. We read
-          everything and publish what helps the community learn.
-        </p>
+        <h1 className="section__title">{siteCopy.submitTitle}</h1>
+        <p className="section__lead">{siteCopy.submitLead}</p>
 
         <div className="panel">
           <span className="card__eyebrow">
@@ -41,7 +38,7 @@ export default function SubmitPage() {
             {siteConfig.submitEmail}
           </p>
           <a
-            href={`mailto:${siteConfig.submitEmail}?subject=Project_Steam submission`}
+            href={`mailto:${siteConfig.submitEmail}?subject=Project Steam submission`}
             className="btn btn--primary"
           >
             Write an email

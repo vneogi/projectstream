@@ -30,15 +30,15 @@ create index if not exists posts_search_idx on posts
 insert into posts (title, slug, excerpt, content, subject_id, subject_slug, subject_name, topics, author_name, status)
 values
 (
-  'Welcome to Project_Steam',
+  'Welcome to Project Steam',
   'welcome-to-project-steam',
   'A student-led library of STEM notes, experiments, and ideas — free for everyone.',
-  'Project_Steam is built so students across India and the world can share what they learn. Content arrives by email, gets reviewed, categorized, and published here.\n\nIf you are a student: keep sending clear notes, diagrams, and honest explanations. If you are a teacher or parent: help us keep quality high and language simple.\n\nTogether we can close the gap between students who have access to great resources and those who do not.',
+  'Project Steam is built so students across India and the world can share what they learn. Content arrives by email, gets reviewed, categorized, and published here.\n\nIf you are a student: keep sending clear notes, diagrams, and honest explanations. If you are a teacher or parent: help us keep quality high and language simple.\n\nTogether we can close the gap between students who have access to great resources and those who do not.',
   'general-stem',
   'general-stem',
   'General STEM',
   array['welcome', 'community'],
-  'Project_Steam team',
+  'Project Steam team',
   'published'
 )
 on conflict (slug) do nothing;

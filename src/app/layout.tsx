@@ -13,12 +13,12 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Project_Steam — Student STEM knowledge for everyone",
-    template: "%s · Project_Steam",
+    default: "Project Steam — Student STEM knowledge for everyone",
+    template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,
   openGraph: {
-    title: "Project_Steam",
+    title: siteConfig.name,
     description: siteConfig.description,
     type: "website",
   },

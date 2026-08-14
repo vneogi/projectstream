@@ -1,6 +1,10 @@
-# Project_Steam
+# Project Steam
 
 A student passion-project website to publish STEM and educational content shared by hundreds of students — free for learners across India and the world.
+
+**Live:** [https://projectstream.vercel.app](https://projectstream.vercel.app)
+
+See **[OPS.md](./OPS.md)** for day-to-day operations: rename Vercel URL, enable Ask AI, Gmail ingest, editing text, and auto-summarize.
 
 Built with **Next.js**, a hand-written CSS design system, and **Supabase** (optional for production database).
 
@@ -22,7 +26,7 @@ Change a token once and it updates everywhere.
 
 - Public home, browse by subject, article pages, search
 - Submit page (email workflow)
-- **Ask Project_Steam** — grounded answers from your published library (+ optional OpenAI)
+- **Ask Project Steam** — grounded answers from your published library (+ optional Groq/OpenAI)
 - Admin dashboard — login, create/edit/publish articles (for reviewing email submissions)
 
 Demo content works out of the box. Connect Supabase to persist posts in production.
@@ -81,13 +85,13 @@ Update `NEXT_PUBLIC_SITE_URL` to your domain.
 
 ### 4. Optional — smarter AI answers
 
-Add `OPENAI_API_KEY` in Vercel. The Ask page will use GPT with your articles as context.
+Add `GROQ_API_KEY` (free) or `OPENAI_API_KEY` in Vercel. See [OPS.md](./OPS.md).
 
 ### 5. Update submit email
 
-Edit `src/lib/site.ts` → `submitEmail` with your daughter's real inbox.
+Edit `src/lib/site.ts` → `submitEmail` (already set to `projectsteamcollective@gmail.com`).
 
-## Domain ideas for Project_Steam
+## Domain ideas for Project Steam
 
 Exact names may already be taken. Check availability on [GoDaddy](https://www.godaddy.com/domains) or [Cloudflare](https://www.cloudflare.com/products/registrar/).
 

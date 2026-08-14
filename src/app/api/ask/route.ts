@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchPublishedPosts } from "@/lib/data";
+import { chatCompletion, llmConfigured } from "@/lib/llm";
 
 export async function POST(request: Request) {
   const { question } = await request.json();
@@ -17,57 +18,40 @@ export async function POST(request: Request) {
       answer:
         "I couldn't find published articles on this topic yet. Try searching the library or submit content so we can add it.",
       sources: [],
+      provider: null,
     });
   }
 
   const contextBlock = topSources
     .map(
       (p, i) =>
-        `[${i + 1}] ${p.title}\n${p.excerpt}\n${p.content.slice(0, 800)}`,
+        `[${i + 1}] ${p.title}\nSummary: ${p.excerpt}\n${p.content.slice(0, 1200)}`,
     )
     .join("\n\n---\n\n");
 
-  const openaiKey = process.env.OPENAI_API_KEY;
+  if (llmConfigured()) {
+    const result = await chatCompletion([
+      {
+        role: "system",
+        content:
+          "You are a helpful STEM tutor for Indian school students (Class 8–12). Answer ONLY using the provided Project Steam library articles. If the articles do not contain enough information, say so clearly. Use simple language. End with a short line listing which source titles you used.",
+      },
+      {
+        role: "user",
+        content: `Question: ${q}\n\nLibrary articles:\n${contextBlock}`,
+      },
+    ]);
 
-  if (openaiKey) {
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openaiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          temperature: 0.3,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a helpful STEM tutor for Indian school students. Answer ONLY using the provided library articles. If the articles do not contain enough information, say so clearly. Use simple language. Mention which source titles you used.",
-            },
-            {
-              role: "user",
-              content: `Question: ${q}\n\nLibrary articles:\n${contextBlock}`,
-            },
-          ],
-        }),
+    if (result) {
+      return NextResponse.json({
+        answer: result.content,
+        provider: result.provider,
+        sources: topSources.map((p) => ({
+          title: p.title,
+          slug: p.slug,
+          excerpt: p.excerpt,
+        })),
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        const answer = data.choices?.[0]?.message?.content ?? "";
-        return NextResponse.json({
-          answer,
-          sources: topSources.map((p) => ({
-            title: p.title,
-            slug: p.slug,
-            excerpt: p.excerpt,
-          })),
-        });
-      }
-    } catch {
-      // fall through to local summary
     }
   }
 
@@ -75,10 +59,15 @@ export async function POST(request: Request) {
     topSources.length > 1
       ? ` You may also read "${topSources[1].title}" for more detail.`
       : ""
-  } Open the linked articles below for the full explanation.`;
+  } Open the linked articles below for the full explanation.${
+    !llmConfigured()
+      ? " (Tip for editors: add GROQ_API_KEY or OPENAI_API_KEY in Vercel to enable live AI answers.)"
+      : ""
+  }`;
 
   return NextResponse.json({
     answer,
+    provider: null,
     sources: topSources.map((p) => ({
       title: p.title,
       slug: p.slug,

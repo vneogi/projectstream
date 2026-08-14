@@ -12,7 +12,7 @@ export function SiteFooter() {
               <span className="brand-mark">
                 <Icon name="atom" />
               </span>
-              Project<span className="brand-accent">_</span>Steam
+              Project <span className="brand-accent">Steam</span>
             </Link>
             <p className="footer__tagline">{siteConfig.description}</p>
           </div>

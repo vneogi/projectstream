@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
+import { siteCopy } from "@/lib/site";
 
 interface Source {
   title: string;
@@ -46,11 +47,8 @@ export default function AskPage() {
       <div className="page-glow" />
       <div className="container container--narrow">
         <span className="section__eyebrow">Ask AI</span>
-        <h1 className="section__title">Ask Project_Steam</h1>
-        <p className="section__lead">
-          Answers are built from published articles in our library, with the
-          sources shown so you can read further.
-        </p>
+        <h1 className="section__title">{siteCopy.askTitle}</h1>
+        <p className="section__lead">{siteCopy.askLead}</p>
 
         <form onSubmit={handleAsk} className="panel form">
           <div className="field">

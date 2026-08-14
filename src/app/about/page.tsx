@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
+import { siteCopy } from "@/lib/site";
 
 export const metadata = {
   title: "About",
@@ -12,10 +13,10 @@ export default function AboutPage() {
         <div className="page-glow" />
         <div className="container container--narrow">
           <span className="section__eyebrow">About</span>
-          <h1 className="section__title">Why Project_Steam exists</h1>
+          <h1 className="section__title">{siteCopy.aboutTitle}</h1>
           <div className="prose">
             <p>
-              Project_Steam is a passion project started by a Class 10 student
+              Project Steam is a passion project started by a Class 10 student
               who believes what you can learn should not depend on where you
               live or which school you attend.
             </p>

@@ -33,10 +33,36 @@ export function PostForm({
   const [status, setStatus] = useState<PostStatus>(post?.status ?? "draft");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [enriching, setEnriching] = useState(false);
 
   function handleTitleChange(value: string) {
     setTitle(value);
     if (!post) setSlug(slugify(value));
+  }
+
+  async function handleEnrich() {
+    setEnriching(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Auto-fill failed");
+
+      if (data.title) handleTitleChange(data.title);
+      if (data.excerpt) setExcerpt(data.excerpt);
+      if (data.content) setContent(data.content);
+      if (data.subjectSlug) setSubjectSlug(data.subjectSlug);
+      if (Array.isArray(data.topics)) setTopics(data.topics.join(", "));
+      if (data.authorName) setAuthorName(data.authorName);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Auto-fill failed");
+    } finally {
+      setEnriching(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -81,6 +107,36 @@ export function PostForm({
 
   return (
     <form onSubmit={handleSubmit} className="panel form">
+      <div className="field">
+        <label className="field__label" htmlFor="content">
+          Content (paste email body / notes first)
+        </label>
+        <p className="field__hint">
+          Separate paragraphs with a blank line. Then use Auto-fill to generate
+          title, summary, subject, and topics.
+        </p>
+        <textarea
+          id="content"
+          className="textarea textarea--mono"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={12}
+          required
+        />
+      </div>
+
+      <div>
+        <button
+          type="button"
+          className="btn btn--secondary"
+          onClick={handleEnrich}
+          disabled={enriching || content.trim().length < 40}
+        >
+          {enriching ? "Working…" : "Auto-fill title, summary & subject"}
+          <Icon name="sparkles" />
+        </button>
+      </div>
+
       <div className="field">
         <label className="field__label" htmlFor="title">
           Title
@@ -128,7 +184,7 @@ export function PostForm({
 
       <div className="field">
         <label className="field__label" htmlFor="excerpt">
-          Short summary
+          Short summary (shown on cards + used by Ask AI)
         </label>
         <textarea
           id="excerpt"
@@ -136,21 +192,6 @@ export function PostForm({
           value={excerpt}
           onChange={(e) => setExcerpt(e.target.value)}
           rows={2}
-          required
-        />
-      </div>
-
-      <div className="field">
-        <label className="field__label" htmlFor="content">
-          Content
-        </label>
-        <p className="field__hint">Separate paragraphs with a blank line.</p>
-        <textarea
-          id="content"
-          className="textarea textarea--mono"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={14}
           required
         />
       </div>
