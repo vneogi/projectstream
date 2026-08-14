@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   const contextBlock = topSources
     .map(
       (p, i) =>
-        `[${i + 1}] ${p.title}\nSummary: ${p.excerpt}\n${p.content.slice(0, 1200)}`,
+        `[${i + 1}] ${p.title}\nSummary: ${p.excerpt}\n${p.content.slice(0, 900)}`,
     )
     .join("\n\n---\n\n");
 

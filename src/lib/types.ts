@@ -24,6 +24,11 @@ export interface Post {
   status: PostStatus;
   sourceMessageId?: string;
   sourceFrom?: string;
+  /** Private storage path in Supabase Storage bucket `materials` */
+  filePath?: string;
+  fileName?: string;
+  fileMime?: string;
+  fileSize?: number;
   createdAt: string;
   updatedAt: string;
 }

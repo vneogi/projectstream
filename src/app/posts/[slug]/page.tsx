@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/Icon";
+import { MaterialAccess } from "@/components/MaterialAccess";
 import { getPost, listPublishedPosts } from "@/lib/data";
+import { getSessionUser } from "@/lib/supabase/server";
 
 export async function generateStaticParams() {
   const posts = await listPublishedPosts();
@@ -18,6 +20,8 @@ export async function generateMetadata({
   return { title: post?.title ?? "Article" };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function PostPage({
   params,
 }: {
@@ -27,6 +31,8 @@ export default async function PostPage({
   const post = await getPost(slug);
   if (!post || post.status !== "published") notFound();
 
+  const user = await getSessionUser();
+  const isLoggedIn = Boolean(user);
   const paragraphs = post.content.split("\n\n").filter(Boolean);
 
   return (
@@ -60,11 +66,31 @@ export default async function PostPage({
             )}
           </header>
 
-          <div className="prose">
-            {paragraphs.map((para, i) => (
-              <p key={i}>{para}</p>
-            ))}
-          </div>
+          <MaterialAccess
+            postId={post.id}
+            slug={post.slug}
+            hasFile={Boolean(post.filePath)}
+            fileName={post.fileName}
+            isLoggedIn={isLoggedIn}
+          />
+
+          {isLoggedIn ? (
+            <div className="prose" style={{ marginTop: "32px" }}>
+              {paragraphs.map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </div>
+          ) : (
+            <div className="prose" style={{ marginTop: "32px" }}>
+              <p>
+                <strong>Public summary:</strong> {post.excerpt}
+              </p>
+              <p style={{ color: "var(--text-muted)" }}>
+                Sign in to read the full notes and download the original
+                PDF/PPTX. Search and Ask AI remain available without an account.
+              </p>
+            </div>
+          )}
         </article>
 
         <div className="panel panel--soft" style={{ marginTop: "48px" }}>

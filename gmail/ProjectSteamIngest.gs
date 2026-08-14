@@ -125,6 +125,16 @@ function processMessage_(message, webhookUrl, secret) {
     if (code >= 200 && code < 300) {
       message.getThread().addLabel(ensureLabel_(LABEL_INGESTED));
       message.markRead();
+
+      // Upload original PDF/PPTX for login-only download (≤ ~3.5MB each)
+      try {
+        var parsed = JSON.parse(text);
+        if (parsed && parsed.postId) {
+          uploadOriginalFiles_(message, webhookUrl, secret, parsed.postId, messageId);
+        }
+      } catch (parseErr) {
+        Logger.log("Could not parse ingest response for uploads: " + parseErr);
+      }
     } else {
       message.getThread().addLabel(ensureLabel_(LABEL_FAILED));
     }
@@ -387,6 +397,58 @@ function cleanText_(text) {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+/**
+ * Upload original binaries to /api/ingest/upload so students can
+ * download them only after social login.
+ */
+function uploadOriginalFiles_(message, webhookUrl, secret, postId, messageId) {
+  var uploadUrl = String(webhookUrl).replace(/\/api\/ingest\/email\/?$/, "/api/ingest/upload");
+  var blobs = message.getAttachments({
+    includeInlineImages: false,
+    includeAttachments: true,
+  });
+  var maxBytes = 3.5 * 1024 * 1024;
+
+  for (var i = 0; i < blobs.length; i++) {
+    var blob = blobs[i];
+    var name = blob.getName() || "attachment";
+    var lower = name.toLowerCase();
+    var mime = (blob.getContentType() || "").toLowerCase();
+    var allowed =
+      lower.endsWith(".pdf") ||
+      lower.endsWith(".pptx") ||
+      lower.endsWith(".ppt") ||
+      lower.endsWith(".docx") ||
+      mime.indexOf("pdf") !== -1 ||
+      mime.indexOf("presentation") !== -1 ||
+      mime.indexOf("powerpoint") !== -1;
+
+    if (!allowed) continue;
+
+    if (blob.getBytes().length > maxBytes) {
+      Logger.log("Skip upload (too large >3.5MB): " + name);
+      continue;
+    }
+
+    try {
+      var form = {
+        messageId: messageId,
+        postId: postId,
+        file: blob,
+      };
+      var res = UrlFetchApp.fetch(uploadUrl, {
+        method: "post",
+        headers: { Authorization: "Bearer " + secret },
+        payload: form,
+        muteHttpExceptions: true,
+      });
+      Logger.log("Upload " + name + " → " + res.getResponseCode() + " " + res.getContentText());
+    } catch (err) {
+      Logger.log("Upload failed for " + name + ": " + err);
+    }
+  }
 }
 
 function ensureLabel_(name) {

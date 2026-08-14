@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AuthButton } from "./AuthButton";
 import { Icon } from "./Icon";
 
 const links = [
@@ -40,6 +41,7 @@ export function SiteHeader() {
           </div>
 
           <div className="nav__actions">
+            <AuthButton />
             <Link href="/submit" className="btn btn--primary btn--sm nav__cta">
               Share your work
               <Icon name="arrow-right" />
@@ -63,6 +65,7 @@ export function SiteHeader() {
                 {link.label}
               </Link>
             ))}
+            <Link href="/auth/login">Sign in to download</Link>
             <Link href="/submit" className="btn btn--primary">
               Share your work
               <Icon name="arrow-right" />

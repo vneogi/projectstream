@@ -4,7 +4,7 @@ A student passion-project website to publish STEM and educational content shared
 
 **Live:** [https://projectstream.vercel.app](https://projectstream.vercel.app)
 
-See **[OPS.md](./OPS.md)** for day-to-day operations, and **[gmail/README.md](./gmail/README.md)** to wire Gmail → draft ingest.
+See **[OPS.md](./OPS.md)** for day-to-day operations, **[AUTH.md](./AUTH.md)** for Google login + protected PDF downloads, and **[gmail/README.md](./gmail/README.md)** for Gmail → draft ingest.
 
 Built with **Next.js**, a hand-written CSS design system, and **Supabase** (optional for production database).
 

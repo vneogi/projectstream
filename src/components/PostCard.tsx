@@ -25,6 +25,12 @@ export function PostCard({ post }: { post: Post }) {
         <span>{post.authorName}</span>
         <span>·</span>
         <span>{new Date(post.createdAt).toLocaleDateString("en-IN")}</span>
+        {post.filePath ? (
+          <>
+            <span>·</span>
+            <span>PDF · sign in to download</span>
+          </>
+        ) : null}
       </div>
     </Link>
   );

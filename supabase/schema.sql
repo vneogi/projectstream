@@ -17,13 +17,21 @@ create table if not exists posts (
   status text not null default 'draft' check (status in ('draft', 'published')),
   source_message_id text unique,
   source_from text,
+  file_path text,
+  file_name text,
+  file_mime text,
+  file_size bigint,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
--- For existing projects created before email ingest:
+-- Migrations for existing projects:
 alter table posts add column if not exists source_message_id text;
 alter table posts add column if not exists source_from text;
+alter table posts add column if not exists file_path text;
+alter table posts add column if not exists file_name text;
+alter table posts add column if not exists file_mime text;
+alter table posts add column if not exists file_size bigint;
 
 create unique index if not exists posts_source_message_id_uidx
   on posts (source_message_id)
@@ -33,11 +41,9 @@ create index if not exists posts_status_idx on posts (status);
 create index if not exists posts_subject_slug_idx on posts (subject_slug);
 create index if not exists posts_created_at_idx on posts (created_at desc);
 
--- Full-text search (optional, for better search at scale)
 create index if not exists posts_search_idx on posts
   using gin (to_tsvector('english', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content,'')));
 
--- Seed sample published posts (optional)
 insert into posts (title, slug, excerpt, content, subject_id, subject_slug, subject_name, topics, author_name, status)
 values
 (
@@ -53,3 +59,20 @@ values
   'published'
 )
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- Storage: create a PRIVATE bucket named "materials" in the
+-- Supabase Dashboard → Storage → New bucket → Public: OFF
+--
+-- Then run the policies below so only the service role
+-- (your server) can read/write. Students never get direct
+-- public URLs — downloads go through /api/download/[postId]
+-- after Google/GitHub login.
+-- ============================================================
+
+-- Optional: if you use SQL to create the bucket (Dashboard is easier):
+-- insert into storage.buckets (id, name, public)
+-- values ('materials', 'materials', false)
+-- on conflict (id) do nothing;
+
+-- Deny public access (default for private buckets). No anon SELECT policies.

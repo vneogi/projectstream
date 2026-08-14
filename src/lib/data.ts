@@ -1,4 +1,3 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Post, PostStatus } from "./types";
 import {
   getPostBySlug,
@@ -7,13 +6,7 @@ import {
   searchPosts,
   subjects,
 } from "./seed-data";
-
-function getSupabaseAdmin(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 function mapRow(row: Record<string, unknown>): Post {
   return {
@@ -34,6 +27,15 @@ function mapRow(row: Record<string, unknown>): Post {
       ? String(row.source_message_id)
       : undefined,
     sourceFrom: row.source_from ? String(row.source_from) : undefined,
+    filePath: row.file_path ? String(row.file_path) : undefined,
+    fileName: row.file_name ? String(row.file_name) : undefined,
+    fileMime: row.file_mime ? String(row.file_mime) : undefined,
+    fileSize:
+      typeof row.file_size === "number"
+        ? row.file_size
+        : row.file_size
+          ? Number(row.file_size)
+          : undefined,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
@@ -145,6 +147,24 @@ export interface CreatePostInput {
   status: PostStatus;
   sourceMessageId?: string;
   sourceFrom?: string;
+  filePath?: string;
+  fileName?: string;
+  fileMime?: string;
+  fileSize?: number;
+}
+
+export async function getPostById(id: string): Promise<Post | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapRow(data);
 }
 
 export async function findPostBySourceMessageId(
@@ -185,6 +205,10 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
     status: input.status,
     source_message_id: input.sourceMessageId ?? null,
     source_from: input.sourceFrom ?? null,
+    file_path: input.filePath ?? null,
+    file_name: input.fileName ?? null,
+    file_mime: input.fileMime ?? null,
+    file_size: input.fileSize ?? null,
     created_at: now,
     updated_at: now,
   };
@@ -228,6 +252,10 @@ export async function updatePost(
   if (input.authorSchool !== undefined) updates.author_school = input.authorSchool;
   if (input.language) updates.language = input.language;
   if (input.status) updates.status = input.status;
+  if (input.filePath !== undefined) updates.file_path = input.filePath;
+  if (input.fileName !== undefined) updates.file_name = input.fileName;
+  if (input.fileMime !== undefined) updates.file_mime = input.fileMime;
+  if (input.fileSize !== undefined) updates.file_size = input.fileSize;
 
   if (input.subjectSlug) {
     const subject = getSubjectBySlug(input.subjectSlug);
