@@ -1,4 +1,4 @@
-# Operations guide — Project Steam
+# Operations guide — Project STEAM
 
 Quick answers for running [projectstream.vercel.app](https://projectstream.vercel.app).
 
@@ -55,7 +55,7 @@ The site prefers **Groq first**, then OpenAI. Without either key, Ask AI still r
 
 **Phase A (now):** Keep using Gmail + Admin paste + **Auto-fill** button (title, summary, subject, topics).
 
-**Phase B (next build):** Google Apps Script on that Gmail account that POSTs new messages to a Project Steam webhook as **drafts** only (never auto-publish).
+**Phase B (next build):** Google Apps Script on that Gmail account that POSTs new messages to a Project STEAM webhook as **drafts** only (never auto-publish).
 
 **Phase C:** Full Gmail API OAuth for continuous sync.
 
@@ -65,9 +65,9 @@ When you're ready for Phase B, ask to “wire Gmail Apps Script ingest”.
 
 ---
 
-## 4) Branding: Project Steam (not Project_Steam)
+## 4) Branding: Project STEAM (not Project_Steam)
 
-Done in code. After redeploy, the site shows **Project Steam**.
+Done in code. After redeploy, the site shows **Project STEAM**.
 
 ---
 

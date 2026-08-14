@@ -1,4 +1,4 @@
-# Project Steam
+# Project STEAM
 
 A student passion-project website to publish STEM and educational content shared by hundreds of students — free for learners across India and the world.
 
@@ -26,7 +26,7 @@ Change a token once and it updates everywhere.
 
 - Public home, browse by subject, article pages, search
 - Submit page (email workflow)
-- **Ask Project Steam** — grounded answers from your published library (+ optional Groq/OpenAI)
+- **Ask Project STEAM** — grounded answers from your published library (+ optional Groq/OpenAI)
 - Admin dashboard — login, create/edit/publish articles (for reviewing email submissions)
 
 Demo content works out of the box. Connect Supabase to persist posts in production.
@@ -91,7 +91,7 @@ Add `GROQ_API_KEY` (free) or `OPENAI_API_KEY` in Vercel. See [OPS.md](./OPS.md).
 
 Edit `src/lib/site.ts` → `submitEmail` (already set to `projectsteamcollective@gmail.com`).
 
-## Domain ideas for Project Steam
+## Domain ideas for Project STEAM
 
 Exact names may already be taken. Check availability on [GoDaddy](https://www.godaddy.com/domains) or [Cloudflare](https://www.cloudflare.com/products/registrar/).
 

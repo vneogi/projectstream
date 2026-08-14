@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     [
       {
         role: "system",
-        content: `You prepare STEM educational posts for Project Steam, a student learning library in India.
+        content: `You prepare STEM educational posts for Project STEAM, a student learning library in India.
 Return ONLY valid JSON with keys:
 - title: clear short title
 - excerpt: 1–2 sentence summary for cards and search (max 220 chars)

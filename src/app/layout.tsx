@@ -13,7 +13,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Project Steam — Student STEM knowledge for everyone",
+    default: "Project STEAM — Student STEM knowledge for everyone",
     template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,

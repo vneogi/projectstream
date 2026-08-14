@@ -38,7 +38,7 @@ export default function SubmitPage() {
             {siteConfig.submitEmail}
           </p>
           <a
-            href={`mailto:${siteConfig.submitEmail}?subject=Project Steam submission`}
+            href={`mailto:${siteConfig.submitEmail}?subject=Project STEAM submission`}
             className="btn btn--primary"
           >
             Write an email

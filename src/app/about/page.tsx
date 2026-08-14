@@ -16,7 +16,7 @@ export default function AboutPage() {
           <h1 className="section__title">{siteCopy.aboutTitle}</h1>
           <div className="prose">
             <p>
-              Project Steam is a passion project started by a Class 10 student
+              Project STEAM is a passion project started by a Class 10 student
               who believes what you can learn should not depend on where you
               live or which school you attend.
             </p>

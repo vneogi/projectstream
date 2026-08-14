@@ -28,7 +28,7 @@ export function SiteHeader() {
             <span className="brand-mark">
               <Icon name="atom" />
             </span>
-            Project <span className="brand-accent">Steam</span>
+            Project <span className="brand-accent">STEAM</span>
           </Link>
 
           <div className="nav__links">

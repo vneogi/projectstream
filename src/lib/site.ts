@@ -1,11 +1,11 @@
 export const siteConfig = {
-  name: "Project Steam",
+  name: "Project STEAM",
   description:
     "Student-shared STEM knowledge for learners across India and the world.",
   submitEmail: "projectsteamcollective@gmail.com",
   tagline: "STEM knowledge, shared by students.",
   aboutBlurb:
-    "Project Steam is a passion project started by a Class 10 student who believes what you can learn should not depend on where you live or which school you attend.",
+    "Project STEAM is a passion project started by a Class 10 student who believes what you can learn should not depend on where you live or which school you attend.",
 };
 
 /**
@@ -29,8 +29,8 @@ export const siteCopy = {
   submitTitle: "Share your knowledge",
   submitLead:
     "Email your notes, diagrams, experiments, or explanations. We read everything and publish what helps the community learn.",
-  askTitle: "Ask Project Steam",
+  askTitle: "Ask Project STEAM",
   askLead:
     "Answers are built from published articles in our library, with the sources shown so you can read further.",
-  aboutTitle: "Why Project Steam exists",
+  aboutTitle: "Why Project STEAM exists",
 };
