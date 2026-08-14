@@ -4,21 +4,27 @@ Quick answers for running [projectstream.vercel.app](https://projectstream.verce
 
 ---
 
-## 1) Rename Vercel URL to `projectsteam.vercel.app`
+## 1) Vercel project name vs public URL
 
-Yes — but only if that name is still free.
+**Not a mistake** if your dashboard is now:
 
-1. Open [vercel.com/dashboard](https://vercel.com/dashboard) → your project
-2. **Settings → Domains**
-3. Click **Add** → try `projectsteam.vercel.app`
-4. If available, set it as the primary domain
-5. Keep or remove `projectstream.vercel.app`
+`vercel.com/vneogis-projects/projectsteam/...`
 
-If `projectsteam` is taken, options:
-- Use a custom domain (best long-term): e.g. `projectsteam.in` / `.org`
-- Or rename the **GitHub repo** and create a **new** Vercel project named `projectsteam` (old URL can keep working until you delete it)
+That is only the **project name inside Vercel** (settings/dashboard path). Renaming it to `projectsteam` is what you wanted for branding.
 
-Note: GitHub repo is currently `projectstream` — that does **not** have to match the Vercel subdomain, but matching names reduces confusion.
+| Thing | Example | What students see |
+|-------|---------|-------------------|
+| Vercel dashboard path | `…/projectsteam/settings` | No — only you |
+| Public site URL | `projectstream.vercel.app` or `projectsteam.vercel.app` | Yes |
+
+To get the nicer **public** URL:
+1. Project → **Settings → Domains**
+2. Add `projectsteam.vercel.app` (if available)
+3. Make it the primary domain
+
+Old `projectstream.vercel.app` can keep working until you remove it.
+
+If `projectsteam.vercel.app` is taken, buy a custom domain (best long-term).
 
 ---
 
@@ -65,9 +71,9 @@ When you're ready for Phase B, ask to “wire Gmail Apps Script ingest”.
 
 ---
 
-## 4) Branding: Project STEAM (not Project_Steam)
+## 4) Branding: Project STEAM
 
-Done in code. After redeploy, the site shows **Project STEAM**.
+Site brand is **Project STEAM** (STEAM in all caps).
 
 ---
 
