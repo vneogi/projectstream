@@ -1,42 +1,40 @@
 /**
  * Project STEAM — Gmail → draft ingest (Apps Script)
  *
- * SETUP (one-time):
- * 1. Open https://script.google.com while signed into
- *    projectsteamcollective@gmail.com
- * 2. New project → paste this entire file
- * 3. Project Settings → Script properties → Add:
- *      WEBHOOK_URL  = https://YOUR-SITE.vercel.app/api/ingest/email
- *      INGEST_SECRET = (same value as Vercel env INGEST_SECRET)
- * 4. Run setupLabels() once (authorize Gmail + UrlFetch)
- * 5. Run processInbox() once to test
- * 6. Triggers → Add trigger:
- *      Function: processInbox
- *      Event source: Time-driven
- *      Type: Minutes timer → Every 5 or 10 minutes
+ * Extracts text from:
+ *  - PDF attachments (via Drive → Google Doc conversion)
+ *  - PPTX / PPT attachments (via Drive → Google Slides conversion)
+ *  - Google Slides / Docs / Drive links in the email body
  *
- * SAFETY:
- * - Creates DRAFTS only on the website (never publishes)
- * - Skips already-labeled messages
- * - Labels mail so it is not processed twice
+ * SETUP (one-time):
+ * 1. Open https://script.google.com as projectsteamcollective@gmail.com
+ * 2. New project → paste this entire file
+ * 3. Services (+) → enable "Drive API" (Advanced Google service)
+ * 4. Project Settings → Script properties:
+ *      WEBHOOK_URL  = https://YOUR-SITE.vercel.app/api/ingest/email
+ *      INGEST_SECRET = (same as Vercel INGEST_SECRET)
+ * 5. Run setupLabels() once (approve Gmail, Drive, Slides, Docs, UrlFetch)
+ * 6. Run processInbox() once to test
+ * 7. Triggers → processInbox every 5–10 minutes
+ *
+ * SAFETY: website creates DRAFTS only — never auto-publishes.
  */
 
 var LABEL_INGESTED = "ProjectSTEAM/Ingested";
 var LABEL_FAILED = "ProjectSTEAM/Failed";
 var LABEL_SKIPPED = "ProjectSTEAM/Skipped";
-var MAX_THREADS = 15;
+var MAX_THREADS = 10;
+var MAX_ATTACHMENTS = 5;
+var MAX_ATTACHMENT_CHARS = 40000;
+var MAX_TOTAL_CHARS = 80000;
 
 function setupLabels() {
   ensureLabel_(LABEL_INGESTED);
   ensureLabel_(LABEL_FAILED);
   ensureLabel_(LABEL_SKIPPED);
-  Logger.log("Labels ready.");
+  Logger.log("Labels ready. Also confirm Drive API is enabled under Services.");
 }
 
-/**
- * Main entry — call from a time-driven trigger.
- * Searches unread inbox mail that has not been ingested yet.
- */
 function processInbox() {
   var props = PropertiesService.getScriptProperties();
   var webhookUrl = props.getProperty("WEBHOOK_URL");
@@ -50,7 +48,6 @@ function processInbox() {
   ensureLabel_(LABEL_FAILED);
   ensureLabel_(LABEL_SKIPPED);
 
-  // Unread, in inbox, not already processed
   var query =
     "in:inbox is:unread -label:" +
     LABEL_INGESTED +
@@ -63,8 +60,7 @@ function processInbox() {
   Logger.log("Found " + threads.length + " thread(s)");
 
   for (var i = 0; i < threads.length; i++) {
-    var thread = threads[i];
-    var messages = thread.getMessages();
+    var messages = threads[i].getMessages();
     for (var j = 0; j < messages.length; j++) {
       processMessage_(messages[j], webhookUrl, secret);
     }
@@ -81,10 +77,23 @@ function processMessage_(message, webhookUrl, secret) {
     ? message.getDate().toISOString()
     : new Date().toISOString();
 
-  // Skip empty / bounce noise
-  if (body.replace(/\s+/g, "").length < 30 && subject.length < 8) {
+  var attachments = extractAttachments_(message);
+  var linkedDocs = extractLinkedDocs_(body);
+  var allExtracted = attachments.concat(linkedDocs);
+
+  var attachmentTextLen = 0;
+  for (var a = 0; a < allExtracted.length; a++) {
+    attachmentTextLen += (allExtracted[a].text || "").length;
+  }
+
+  // Skip only if both body and attachments are empty/noise
+  if (
+    body.replace(/\s+/g, "").length < 30 &&
+    attachmentTextLen < 40 &&
+    subject.length < 8
+  ) {
     message.getThread().addLabel(ensureLabel_(LABEL_SKIPPED));
-    Logger.log("Skipped short message: " + messageId);
+    Logger.log("Skipped empty message: " + messageId);
     return;
   }
 
@@ -93,8 +102,9 @@ function processMessage_(message, webhookUrl, secret) {
     subject: subject,
     from: from,
     fromName: fromName,
-    body: body.slice(0, 50000),
+    body: body.slice(0, 20000),
     receivedAt: receivedAt,
+    attachments: allExtracted,
   };
 
   try {
@@ -124,6 +134,261 @@ function processMessage_(message, webhookUrl, secret) {
   }
 }
 
+/**
+ * Pull text from PDF / PPTX / PPT / Google-native attachments.
+ */
+function extractAttachments_(message) {
+  var results = [];
+  var blobs = message.getAttachments({
+    includeInlineImages: false,
+    includeAttachments: true,
+  });
+
+  for (var i = 0; i < blobs.length && results.length < MAX_ATTACHMENTS; i++) {
+    var blob = blobs[i];
+    var name = blob.getName() || "attachment";
+    var mime = (blob.getContentType() || "").toLowerCase();
+    var lower = name.toLowerCase();
+
+    try {
+      var text = "";
+      var kind = "other";
+
+      if (
+        mime.indexOf("pdf") !== -1 ||
+        lower.endsWith(".pdf")
+      ) {
+        kind = "pdf";
+        text = extractPdfText_(blob);
+      } else if (
+        mime.indexOf("presentation") !== -1 ||
+        mime.indexOf("powerpoint") !== -1 ||
+        lower.endsWith(".pptx") ||
+        lower.endsWith(".ppt")
+      ) {
+        kind = "pptx";
+        text = extractPptxText_(blob);
+      } else if (
+        mime.indexOf("msword") !== -1 ||
+        mime.indexOf("wordprocessingml") !== -1 ||
+        lower.endsWith(".docx") ||
+        lower.endsWith(".doc")
+      ) {
+        kind = "docx";
+        text = extractDocText_(blob);
+      } else if (mime.indexOf("text/") === 0 || lower.endsWith(".txt")) {
+        kind = "text";
+        text = blob.getDataAsString();
+      } else {
+        Logger.log("Skipping unsupported attachment: " + name + " (" + mime + ")");
+        continue;
+      }
+
+      text = cleanText_(text).slice(0, MAX_ATTACHMENT_CHARS);
+      if (text.length < 20) {
+        Logger.log(
+          "Little/no text from " +
+            name +
+            " (scanned image PDF?). Skipping.",
+        );
+        continue;
+      }
+
+      results.push({
+        name: name,
+        type: kind,
+        mimeType: mime,
+        text: text,
+      });
+    } catch (err) {
+      Logger.log("Failed to extract " + name + ": " + err);
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Find Google Slides / Docs / Drive file links in the email body and pull text.
+ * The Gmail account must have access (students should share with
+ * projectsteamcollective@gmail.com or set link to "Anyone with the link").
+ */
+function extractLinkedDocs_(body) {
+  var results = [];
+  if (!body) return results;
+
+  var slideIds = uniqueMatches_(
+    body,
+    /https:\/\/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/g,
+  );
+  var docIds = uniqueMatches_(
+    body,
+    /https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/g,
+  );
+
+  for (var i = 0; i < slideIds.length && results.length < MAX_ATTACHMENTS; i++) {
+    try {
+      var slideText = extractGoogleSlidesTextById_(slideIds[i]);
+      slideText = cleanText_(slideText).slice(0, MAX_ATTACHMENT_CHARS);
+      if (slideText.length >= 20) {
+        results.push({
+          name: "Google Slides " + slideIds[i],
+          type: "google-slides",
+          mimeType: "application/vnd.google-apps.presentation",
+          text: slideText,
+          sourceUrl:
+            "https://docs.google.com/presentation/d/" + slideIds[i],
+        });
+      }
+    } catch (err) {
+      Logger.log("Could not read Slides " + slideIds[i] + ": " + err);
+    }
+  }
+
+  for (var d = 0; d < docIds.length && results.length < MAX_ATTACHMENTS; d++) {
+    try {
+      var docText = DocumentApp.openById(docIds[d]).getBody().getText();
+      docText = cleanText_(docText).slice(0, MAX_ATTACHMENT_CHARS);
+      if (docText.length >= 20) {
+        results.push({
+          name: "Google Doc " + docIds[d],
+          type: "google-doc",
+          mimeType: "application/vnd.google-apps.document",
+          text: docText,
+          sourceUrl: "https://docs.google.com/document/d/" + docIds[d],
+        });
+      }
+    } catch (err) {
+      Logger.log("Could not read Doc " + docIds[d] + ": " + err);
+    }
+  }
+
+  return results;
+}
+
+/** PDF → temporary Google Doc → text → delete temp file */
+function extractPdfText_(blob) {
+  assertDrive_();
+  var resource = {
+    title: "steam-temp-pdf-" + Date.now(),
+    mimeType: MimeType.GOOGLE_DOCS,
+  };
+  var file = Drive.Files.insert(resource, blob, { convert: true });
+  try {
+    return DocumentApp.openById(file.id).getBody().getText();
+  } finally {
+    try {
+      Drive.Files.remove(file.id);
+    } catch (e) {}
+  }
+}
+
+/** PPTX/PPT → temporary Google Slides → text → delete temp file */
+function extractPptxText_(blob) {
+  assertDrive_();
+  var resource = {
+    title: "steam-temp-ppt-" + Date.now(),
+    mimeType: MimeType.GOOGLE_SLIDES,
+  };
+  var file = Drive.Files.insert(resource, blob, { convert: true });
+  try {
+    return extractGoogleSlidesTextById_(file.id);
+  } finally {
+    try {
+      Drive.Files.remove(file.id);
+    } catch (e) {}
+  }
+}
+
+/** DOCX/DOC → temporary Google Doc → text */
+function extractDocText_(blob) {
+  assertDrive_();
+  var resource = {
+    title: "steam-temp-doc-" + Date.now(),
+    mimeType: MimeType.GOOGLE_DOCS,
+  };
+  var file = Drive.Files.insert(resource, blob, { convert: true });
+  try {
+    return DocumentApp.openById(file.id).getBody().getText();
+  } finally {
+    try {
+      Drive.Files.remove(file.id);
+    } catch (e) {}
+  }
+}
+
+function extractGoogleSlidesTextById_(presentationId) {
+  var presentation = SlidesApp.openById(presentationId);
+  var slides = presentation.getSlides();
+  var parts = [];
+
+  for (var i = 0; i < slides.length; i++) {
+    parts.push("--- Slide " + (i + 1) + " ---");
+    var shapes = slides[i].getShapes();
+    for (var s = 0; s < shapes.length; s++) {
+      try {
+        var t = shapes[s].getText();
+        if (t) {
+          var str = t.asString();
+          if (str && str.replace(/\s+/g, "").length > 0) parts.push(str);
+        }
+      } catch (e) {
+        // tables / images without text
+      }
+    }
+
+    // Speaker notes
+    try {
+      var notes = slides[i].getNotesPage();
+      if (notes) {
+        var noteShapes = notes.getShapes();
+        for (var n = 0; n < noteShapes.length; n++) {
+          try {
+            var nt = noteShapes[n].getText();
+            if (nt) {
+              var ns = nt.asString();
+              if (ns && ns.replace(/\s+/g, "").length > 0) {
+                parts.push("[Notes] " + ns);
+              }
+            }
+          } catch (e2) {}
+        }
+      }
+    } catch (e3) {}
+  }
+
+  return parts.join("\n");
+}
+
+function assertDrive_() {
+  if (typeof Drive === "undefined" || !Drive.Files) {
+    throw new Error(
+      "Enable Drive API: Apps Script → Services (+) → Drive API",
+    );
+  }
+}
+
+function uniqueMatches_(text, regex) {
+  var ids = [];
+  var seen = {};
+  var m;
+  while ((m = regex.exec(text)) !== null) {
+    if (!seen[m[1]]) {
+      seen[m[1]] = true;
+      ids.push(m[1]);
+    }
+  }
+  return ids;
+}
+
+function cleanText_(text) {
+  return String(text || "")
+    .replace(/\u0000/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function ensureLabel_(name) {
   var label = GmailApp.getUserLabelByName(name);
   if (!label) label = GmailApp.createLabel(name);
@@ -149,7 +414,7 @@ function stripHtml_(html) {
     .trim();
 }
 
-/** Manual test helper — sends a fake payload (does not read Gmail). */
+/** Manual test helper — fake payload with attachment text */
 function testWebhookOnly() {
   var props = PropertiesService.getScriptProperties();
   var webhookUrl = props.getProperty("WEBHOOK_URL");
@@ -160,12 +425,19 @@ function testWebhookOnly() {
     headers: { Authorization: "Bearer " + secret },
     payload: JSON.stringify({
       messageId: "test-" + Date.now(),
-      subject: "Test: Photosynthesis notes",
+      subject: "Test: Photosynthesis slides",
       from: "Student Contributor <student@example.com>",
       fromName: "Student Contributor",
-      body:
-        "Photosynthesis converts light into chemical energy.\n\n6CO2 + 6H2O + light → C6H12O6 + 6O2\n\nThis is a test submission for Project STEAM.",
+      body: "Please find my slides attached.",
       receivedAt: new Date().toISOString(),
+      attachments: [
+        {
+          name: "photosynthesis.pptx",
+          type: "pptx",
+          text:
+            "--- Slide 1 ---\nPhotosynthesis\n--- Slide 2 ---\n6CO2 + 6H2O + light → C6H12O6 + 6O2\n--- Slide 3 ---\nChlorophyll absorbs light energy.",
+        },
+      ],
     }),
     muteHttpExceptions: true,
   });

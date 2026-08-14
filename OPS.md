@@ -53,7 +53,7 @@ The site prefers **Groq first**, then OpenAI. Without either key, Ask AI still r
 
 ## 3) Pull documents from `projectsteamcollective@gmail.com`
 
-**Wired as draft-only ingest.** Full steps: [`gmail/README.md`](./gmail/README.md)
+**Wired as draft-only ingest.** Supports **PDF, PPTX, and Google Slides links** (text extraction in Apps Script). Full steps: [`gmail/README.md`](./gmail/README.md)
 
 ```text
 Gmail → Apps Script → POST /api/ingest/email → Supabase draft → you publish in /admin

@@ -7,9 +7,19 @@ import {
 import { enrichSubmission } from "@/lib/enrich";
 import { slugify, verifyIngestSecret } from "@/lib/security";
 
+type IngestAttachment = {
+  name?: string;
+  type?: string;
+  mimeType?: string;
+  text?: string;
+  sourceUrl?: string;
+};
+
 /**
  * Gmail Apps Script webhook.
  * ALWAYS creates drafts only — never publishes.
+ *
+ * Accepts email body + extracted attachment text (PDF / PPTX / Google Slides).
  *
  * Auth: Authorization: Bearer <INGEST_SECRET>
  * or header x-ingest-secret: <INGEST_SECRET>
@@ -53,13 +63,35 @@ export async function POST(request: Request) {
   const fromName = String(body.fromName ?? "").trim();
   const plainBody = String(body.body ?? body.plainBody ?? "").trim();
   const receivedAt = String(body.receivedAt ?? "").trim();
+  const attachments = Array.isArray(body.attachments)
+    ? (body.attachments as IngestAttachment[])
+    : [];
 
   if (!messageId) {
     return NextResponse.json({ error: "messageId is required" }, { status: 400 });
   }
-  if (plainBody.length < 20 && subject.length < 5) {
+
+  const attachmentBlocks = attachments
+    .map((att) => {
+      const text = String(att.text ?? "").trim();
+      if (text.length < 20) return "";
+      const name = String(att.name ?? "attachment");
+      const type = String(att.type ?? "file");
+      const url = att.sourceUrl ? `\nSource: ${att.sourceUrl}` : "";
+      return `### Attachment (${type}): ${name}${url}\n\n${text.slice(0, 40000)}`;
+    })
+    .filter(Boolean);
+
+  const combinedAttachmentText = attachmentBlocks.join("\n\n");
+  const hasBody = plainBody.replace(/\s+/g, "").length >= 20;
+  const hasAttachments = combinedAttachmentText.length >= 40;
+
+  if (!hasBody && !hasAttachments && subject.length < 5) {
     return NextResponse.json(
-      { error: "Email body is too short to ingest" },
+      {
+        error:
+          "Nothing to ingest — email body and attachments had too little extractable text (scanned image PDFs need OCR).",
+      },
       { status: 400 },
     );
   }
@@ -79,17 +111,21 @@ export async function POST(request: Request) {
     subject ? `Email subject: ${subject}` : "",
     from ? `From: ${from}` : "",
     receivedAt ? `Received: ${receivedAt}` : "",
+    attachments.length
+      ? `Attachments processed: ${attachments.length}`
+      : "",
     "",
-    plainBody || subject,
+    hasBody ? `## Email message\n\n${plainBody.slice(0, 20000)}` : "",
+    hasAttachments ? `## Extracted files\n\n${combinedAttachmentText}` : "",
   ]
     .filter(Boolean)
-    .join("\n");
+    .join("\n")
+    .slice(0, 90000);
 
   const enriched = await enrichSubmission(raw, {
     fromName: fromName || undefined,
   });
 
-  // Prefer email subject if enrichment title is too generic
   const title =
     enriched.title && !enriched.title.toLowerCase().includes("review needed")
       ? enriched.title
@@ -98,15 +134,23 @@ export async function POST(request: Request) {
   const baseSlug = slugify(title) || `email-${Date.now()}`;
   const uniqueSlug = `${baseSlug}-${messageId.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toLowerCase()}`;
 
+  const topics = Array.from(
+    new Set(
+      [
+        "from-email",
+        ...attachments.map((a) => String(a.type ?? "").toLowerCase()).filter(Boolean),
+        ...enriched.topics,
+      ].map((t) => t.toLowerCase()),
+    ),
+  );
+
   const post = await createPost({
     title,
     slug: uniqueSlug,
     excerpt: enriched.excerpt,
     content: enriched.content,
     subjectSlug: enriched.subjectSlug,
-    topics: Array.from(
-      new Set(["from-email", ...enriched.topics].map((t) => t.toLowerCase())),
-    ),
+    topics,
     authorName: enriched.authorName || fromName || "Student contributor",
     language: "en",
     // Hard rule: email ingest never publishes
@@ -117,7 +161,10 @@ export async function POST(request: Request) {
 
   if (!post) {
     return NextResponse.json(
-      { error: "Failed to create draft. Check Supabase schema includes source_message_id." },
+      {
+        error:
+          "Failed to create draft. Check Supabase schema includes source_message_id.",
+      },
       { status: 500 },
     );
   }
@@ -129,6 +176,7 @@ export async function POST(request: Request) {
     status: post.status,
     title: post.title,
     subjectSlug: post.subjectSlug,
+    attachmentsUsed: attachmentBlocks.length,
     enrichedWith: enriched.provider,
     message: "Draft created — review in /admin before publishing",
   });
@@ -138,7 +186,8 @@ export async function GET() {
   return NextResponse.json({
     service: "Project STEAM email ingest",
     publishes: false,
+    supports: ["email body", "pdf", "pptx", "docx", "google slides/docs links"],
     requires: ["INGEST_SECRET", "Supabase"],
-    docs: "/docs in repo: gmail/README.md",
+    docs: "gmail/README.md",
   });
 }

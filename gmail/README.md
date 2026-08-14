@@ -1,79 +1,87 @@
 # Gmail → Project STEAM draft ingest
 
-Students email **projectsteamcollective@gmail.com**.  
-A Google Apps Script reads new mail and POSTs it to your website as a **draft only**. You still review and publish in `/admin`.
+Students email **projectsteamcollective@gmail.com** with notes as:
+
+- **PDF** attachments  
+- **PPTX / PPT** attachments  
+- **Google Slides / Docs links** in the email body  
+
+A Google Apps Script extracts the text, then POSTs it to your website as a **draft only**. You still review and publish in `/admin`.
 
 ```text
-Gmail inbox
-    ↓  Apps Script (every 5–10 min)
-POST /api/ingest/email  (secret header)
+Gmail (+ PDF / PPTX / Slides link)
+    ↓  Apps Script extracts text (Drive conversion)
+POST /api/ingest/email
+    ↓  Auto title + summary + subject (if GROQ/OpenAI set)
+Supabase draft
     ↓
-Supabase posts table  status = draft
-    ↓
-You review in /admin → Publish
+/admin → you Publish
 ```
 
 ## Prerequisites
 
-1. **Supabase** connected (drafts must persist)
-2. Run SQL in `supabase/schema.sql` (includes `source_message_id`)
-3. Vercel env vars:
+1. **Supabase** connected + run `supabase/schema.sql`
+2. Vercel env vars (then **Redeploy**):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
-   - `INGEST_SECRET` — long random string (e.g. `openssl rand -hex 32`)
-   - Optional: `GROQ_API_KEY` for auto title/summary/subject
-4. Redeploy after adding env vars
+   - `INGEST_SECRET`
+   - `GROQ_API_KEY` (recommended — summaries from long slide decks)
+3. Ask students to:
+   - Attach PDF/PPTX, **or**
+   - Share Google Slides with `projectsteamcollective@gmail.com` (or “Anyone with the link”)
 
-## Install Apps Script (15 minutes)
+## Install / update Apps Script
 
 1. Sign in as `projectsteamcollective@gmail.com`
-2. Open [script.google.com](https://script.google.com) → **New project**
-3. Delete the default code and paste everything from `ProjectSteamIngest.gs`
-4. **Project Settings** (gear) → **Script properties** → Add:
+2. [script.google.com](https://script.google.com) → your project (or New project)
+3. Replace code with `ProjectSteamIngest.gs`
+4. **Services (+)** → enable **Drive API**
+5. Script properties:
    | Property | Value |
    |----------|--------|
    | `WEBHOOK_URL` | `https://YOUR-DOMAIN.vercel.app/api/ingest/email` |
-   | `INGEST_SECRET` | same as Vercel `INGEST_SECRET` |
-5. Select function `setupLabels` → **Run** → approve Gmail + external request permissions
-6. Select `testWebhookOnly` → **Run** → check Logs; then open `/admin` and confirm a new **draft**
-7. Select `processInbox` → **Run** once on real unread mail
-8. **Triggers** (clock icon) → Add trigger:
-   - Function: `processInbox`
-   - Event source: Time-driven
-   - Every 5 or 10 minutes
+   | `INGEST_SECRET` | same as Vercel |
+6. Run `setupLabels` → approve permissions (Gmail, Drive, Docs, Slides, external URL)
+7. Run `testWebhookOnly` → check `/admin` for a draft
+8. Trigger: `processInbox` every 5–10 minutes
 
-## Safety rules (built in)
+If you already installed an older script, **re-paste** this file and re-run once — attachment parsing is new.
 
-| Rule | Behavior |
-|------|----------|
-| Never auto-publish | API hard-codes `status: "draft"` |
-| No duplicates | Same Gmail `messageId` is skipped |
-| Labeled after success | `ProjectSTEAM/Ingested` |
-| Failures labeled | `ProjectSTEAM/Failed` (re-run after fixing) |
+## What gets extracted
 
-## Day-to-day workflow
+| Student sends | How text is extracted |
+|---------------|------------------------|
+| `.pdf` | Convert to Google Doc via Drive → read text |
+| `.pptx` / `.ppt` | Convert to Google Slides → read slide + notes text |
+| `.docx` / `.doc` | Convert to Google Doc → read text |
+| Google Slides link | Open presentation (if shared) → read slides |
+| Google Doc link | Open doc (if shared) → read body |
+| Plain email text | Included as-is |
 
-1. Students email notes to `projectsteamcollective@gmail.com`
-2. Within ~10 minutes a **draft** appears in `/admin`
-3. Open **Edit** → review Auto-fill fields → set **Published** → Save
-4. Article appears on Browse / Search / Ask AI
+Then the website LLM (Groq/OpenAI) builds **title, summary, subject, topics** for the draft.
+
+## Limits & caveats
+
+| Case | What happens |
+|------|----------------|
+| Scanned / image-only PDF | Little text extracted — draft may fail or need manual paste (OCR not in v1) |
+| Huge decks | Text is capped (~40k chars per file) so summaries stay focused |
+| Private Slides link | Must share with the Gmail account or use “anyone with link” |
+| Auto-publish | **Never** — always draft until you publish |
+
+## Day-to-day
+
+1. Student emails PDF/PPTX/Slides to `projectsteamcollective@gmail.com`
+2. Within ~10 minutes a **draft** appears in `/admin` (Source: From email)
+3. You review summary + subject → set **Published** → Save
+4. Summary shows on cards; full text powers Search / Ask AI
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| `401 Unauthorized` | `INGEST_SECRET` mismatch between Script properties and Vercel |
-| `503 Supabase is not configured` | Add Supabase keys + redeploy |
-| Drafts never appear | Check Apps Script Executions log; confirm trigger is enabled |
-| Mail stuck with Failed label | Fix error, remove Failed label, mark unread, re-run `processInbox` |
-| Attachments missing | v1 imports **email body text only** — paste PDF text in Admin if needed |
-
-## Optional: only process a label
-
-If the inbox is busy, change the search query in `processInbox` to:
-
-```javascript
-var query = "label:ProjectSTEAM/ToIngest -label:ProjectSTEAM/Ingested";
-```
-
-Then create label `ProjectSTEAM/ToIngest` and move submissions there.
+| `Enable Drive API` error | Services (+) → Drive API |
+| Attachment ignored | Check Executions log — scanned PDFs need a text PDF or typed notes |
+| Slides link not read | Share with `projectsteamcollective@gmail.com` |
+| `401 Unauthorized` | Matching `INGEST_SECRET` in Vercel + Script properties |
+| Weak summaries | Add `GROQ_API_KEY` and redeploy |
