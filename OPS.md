@@ -53,21 +53,20 @@ The site prefers **Groq first**, then OpenAI. Without either key, Ask AI still r
 
 ## 3) Pull documents from `projectsteamcollective@gmail.com`
 
-**Not automatic yet.** Today the flow is:
+**Wired as draft-only ingest.** Full steps: [`gmail/README.md`](./gmail/README.md)
 
-`student emails Gmail → human reads → paste into /admin → publish`
+```text
+Gmail → Apps Script → POST /api/ingest/email → Supabase draft → you publish in /admin
+```
 
-### Recommended next steps (student-friendly)
+Quick checklist:
+1. Connect Supabase + run `supabase/schema.sql`
+2. Set `INGEST_SECRET` (and Supabase keys) in Vercel → Redeploy
+3. Paste `gmail/ProjectSteamIngest.gs` into Apps Script on that Gmail account
+4. Add Script properties `WEBHOOK_URL` + `INGEST_SECRET`
+5. Run `setupLabels`, then `testWebhookOnly`, then add a 5–10 min trigger on `processInbox`
 
-**Phase A (now):** Keep using Gmail + Admin paste + **Auto-fill** button (title, summary, subject, topics).
-
-**Phase B (next build):** Google Apps Script on that Gmail account that POSTs new messages to a Project STEAM webhook as **drafts** only (never auto-publish).
-
-**Phase C:** Full Gmail API OAuth for continuous sync.
-
-We will not auto-publish from email — review stays required for student safety.
-
-When you're ready for Phase B, ask to “wire Gmail Apps Script ingest”.
+**Never auto-publishes.** Emails become drafts only.
 
 ---
 
@@ -109,13 +108,9 @@ Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 
 ## 7) Is email submission working?
 
-**Partially.**
-
 | Piece | Status |
 |-------|--------|
-| Submit page shows `projectsteamcollective@gmail.com` | Yes (after this deploy) |
+| Submit page shows `projectsteamcollective@gmail.com` | Yes |
 | “Write an email” opens the user’s mail app | Yes (`mailto:`) |
-| Site automatically reads the Gmail inbox | **No — not yet** |
-| Admin publish after manual paste | Yes |
-
-So students *can* email you; the site does *not* yet import those emails by itself.
+| Gmail → website **draft** (Apps Script) | Ready — follow [`gmail/README.md`](./gmail/README.md) |
+| Auto-publish from email | **Never** — review required |

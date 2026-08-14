@@ -22,6 +22,8 @@ export interface Post {
   authorSchool?: string;
   language: string;
   status: PostStatus;
+  sourceMessageId?: string;
+  sourceFrom?: string;
   createdAt: string;
   updatedAt: string;
 }

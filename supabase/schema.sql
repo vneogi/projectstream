@@ -1,4 +1,5 @@
 -- Run this in Supabase SQL Editor after creating a project
+-- Safe to re-run: uses IF NOT EXISTS / ADD COLUMN IF NOT EXISTS
 
 create table if not exists posts (
   id uuid primary key default gen_random_uuid(),
@@ -14,9 +15,19 @@ create table if not exists posts (
   author_school text,
   language text default 'en',
   status text not null default 'draft' check (status in ('draft', 'published')),
+  source_message_id text unique,
+  source_from text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- For existing projects created before email ingest:
+alter table posts add column if not exists source_message_id text;
+alter table posts add column if not exists source_from text;
+
+create unique index if not exists posts_source_message_id_uidx
+  on posts (source_message_id)
+  where source_message_id is not null;
 
 create index if not exists posts_status_idx on posts (status);
 create index if not exists posts_subject_slug_idx on posts (subject_slug);

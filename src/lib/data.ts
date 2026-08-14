@@ -30,9 +30,19 @@ function mapRow(row: Record<string, unknown>): Post {
     authorSchool: row.author_school ? String(row.author_school) : undefined,
     language: String(row.language ?? "en"),
     status: row.status as PostStatus,
+    sourceMessageId: row.source_message_id
+      ? String(row.source_message_id)
+      : undefined,
+    sourceFrom: row.source_from ? String(row.source_from) : undefined,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
+}
+
+export function hasDatabase(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
 }
 
 export async function listSubjects() {
@@ -133,6 +143,24 @@ export interface CreatePostInput {
   authorSchool?: string;
   language: string;
   status: PostStatus;
+  sourceMessageId?: string;
+  sourceFrom?: string;
+}
+
+export async function findPostBySourceMessageId(
+  sourceMessageId: string,
+): Promise<Post | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("source_message_id", sourceMessageId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapRow(data);
 }
 
 export async function createPost(input: CreatePostInput): Promise<Post | null> {
@@ -155,6 +183,8 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
     author_school: input.authorSchool ?? null,
     language: input.language,
     status: input.status,
+    source_message_id: input.sourceMessageId ?? null,
+    source_from: input.sourceFrom ?? null,
     created_at: now,
     updated_at: now,
   };
@@ -171,7 +201,10 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
   }
 
   const { data, error } = await supabase.from("posts").insert(row).select().single();
-  if (error || !data) return null;
+  if (error || !data) {
+    console.error("createPost failed", error?.message);
+    return null;
+  }
   return mapRow(data);
 }
 
