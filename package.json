@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import ./tests/resolve-hook-register.mjs --experimental-strip-types --test tests/*.test.ts",
+    "test:unit": "node --import ./tests/resolve-hook-register.mjs --experimental-strip-types --test tests/security.test.ts tests/seed-data.test.ts tests/enrich.test.ts tests/map-post.test.ts tests/llm.test.ts tests/site.test.ts tests/admin-auth.test.ts tests/ingest-rules.test.ts",
+    "test:smoke": "NODE_TLS_REJECT_UNAUTHORIZED=0 node --experimental-strip-types --test tests/smoke.live.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

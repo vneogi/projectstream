@@ -1,5 +1,5 @@
-import { chatCompletion, llmConfigured } from "@/lib/llm";
-import { subjects } from "@/lib/seed-data";
+import { chatCompletion, llmConfigured } from "./llm";
+import { subjects } from "./seed-data";
 
 export type EnrichResult = {
   title: string;

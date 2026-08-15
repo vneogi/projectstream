@@ -123,6 +123,9 @@ Later: automate with Gmail API or inbound email (Resend) creating **drafts** onl
 | `npm run build` | Production build |
 | `npm run start` | Run production build locally |
 | `npm run typecheck` | TypeScript check |
+| `npm run test:unit` | Unit tests (security, enrich, search, LLM helpers) |
+| `npm run test:smoke` | Live checks against the deployed Vercel site |
+| `npm test` | All local `tests/*.test.ts` files |
 
 ## License
 
