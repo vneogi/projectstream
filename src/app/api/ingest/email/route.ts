@@ -86,6 +86,19 @@ export async function POST(request: Request) {
   const hasBody = plainBody.replace(/\s+/g, "").length >= 20;
   const hasAttachments = combinedAttachmentText.length >= 40;
 
+  // A submission must carry study material. Plain replies on a thread are
+  // conversation, not content, and must never become drafts.
+  if (attachments.length === 0) {
+    return NextResponse.json(
+      {
+        error:
+          "Skipped — a submission needs a PDF/PPTX/DOCX attachment or a Google Slides/Docs link. Plain emails and replies are ignored.",
+        skipped: true,
+      },
+      { status: 400 },
+    );
+  }
+
   if (!hasBody && !hasAttachments && subject.length < 5) {
     return NextResponse.json(
       {
@@ -148,6 +161,7 @@ export async function POST(request: Request) {
     title,
     slug: uniqueSlug,
     excerpt: enriched.excerpt,
+    abstract: enriched.abstract,
     content: enriched.content,
     subjectSlug: enriched.subjectSlug,
     topics,
@@ -178,6 +192,7 @@ export async function POST(request: Request) {
     subjectSlug: post.subjectSlug,
     attachmentsUsed: attachmentBlocks.length,
     enrichedWith: enriched.provider,
+    enrichWarning: enriched.warning,
     message: "Draft created — review in /admin before publishing",
   });
 }

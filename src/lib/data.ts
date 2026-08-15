@@ -106,6 +106,7 @@ export interface CreatePostInput {
   title: string;
   slug: string;
   excerpt: string;
+  abstract?: string;
   content: string;
   subjectSlug: string;
   topics: string[];
@@ -162,6 +163,7 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
     title: input.title,
     slug: input.slug,
     excerpt: input.excerpt,
+    abstract: input.abstract ?? null,
     content: input.content,
     subject_id: subject.id,
     subject_slug: subject.slug,
@@ -214,6 +216,7 @@ export async function updatePost(
   if (input.title) updates.title = input.title;
   if (input.slug) updates.slug = input.slug;
   if (input.excerpt) updates.excerpt = input.excerpt;
+  if (input.abstract !== undefined) updates.abstract = input.abstract;
   if (input.content) updates.content = input.content;
   if (input.topics) updates.topics = input.topics;
   if (input.authorName) updates.author_name = input.authorName;

@@ -7,6 +7,7 @@ export function mapPostRow(row: Record<string, unknown>): Post {
     title: String(row.title),
     slug: String(row.slug),
     excerpt: String(row.excerpt ?? ""),
+    abstract: row.abstract ? String(row.abstract) : undefined,
     content: String(row.content),
     subjectId: String(row.subject_id),
     subjectSlug: String(row.subject_slug),

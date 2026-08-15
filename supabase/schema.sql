@@ -6,6 +6,7 @@ create table if not exists posts (
   title text not null,
   slug text not null unique,
   excerpt text,
+  abstract text,
   content text not null,
   subject_id text not null,
   subject_slug text not null,
@@ -26,6 +27,7 @@ create table if not exists posts (
 );
 
 -- Migrations for existing projects:
+alter table posts add column if not exists abstract text;
 alter table posts add column if not exists source_message_id text;
 alter table posts add column if not exists source_from text;
 alter table posts add column if not exists file_path text;

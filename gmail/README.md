@@ -47,6 +47,33 @@ Supabase draft
 
 If you already installed an older script, **re-paste** this file and re-run once — attachment parsing is new.
 
+## What becomes a draft
+
+Only real submissions are ingested. Everything else is labelled
+`ProjectSTEAM/Skipped` and left alone.
+
+| Email | Result |
+|-------|--------|
+| New email with PDF / PPTX / DOCX attached | **Draft created** |
+| New email with a Google Slides / Docs link | **Draft created** |
+| `Re:` reply on an existing thread | Skipped |
+| Any message threaded onto an earlier email | Skipped |
+| Plain email with no attachment or link | Skipped |
+| Mail sent by the Gmail account itself | Skipped |
+
+`Fwd:` messages are allowed, because students often forward their own work.
+
+Tuning flags at the top of `ProjectSteamIngest.gs`:
+
+```js
+var REQUIRE_MATERIAL = true;  // must have an attachment or Slides/Docs link
+var SKIP_REPLIES = true;      // "Re:" and threaded messages never ingest
+var SKIP_FORWARDS = false;    // set true to also ignore "Fwd:"
+```
+
+The website enforces the same rule, so an old copy of the script cannot create
+drafts from plain replies.
+
 ## What gets extracted
 
 | Student sends | How text is extracted |
@@ -58,7 +85,8 @@ If you already installed an older script, **re-paste** this file and re-run once
 | Google Doc link | Open doc (if shared) → read body |
 | Plain email text | Included as-is |
 
-Then the website LLM (Groq/OpenAI) builds **title, summary, subject, topics** for the draft.
+Then the website LLM (Groq/OpenAI) builds the **title, author, subject,
+topics, summary (2–3 lines), and abstract (10–20 lines)** for the draft.
 
 ## Limits & caveats
 
@@ -84,4 +112,6 @@ Then the website LLM (Groq/OpenAI) builds **title, summary, subject, topics** fo
 | Attachment ignored | Check Executions log — scanned PDFs need a text PDF or typed notes |
 | Slides link not read | Share with `projectsteamcollective@gmail.com` |
 | `401 Unauthorized` | Matching `INGEST_SECRET` in Vercel + Script properties |
+| Replies still creating drafts | Re-paste the latest script — reply filtering is new |
 | Weak summaries | Add `GROQ_API_KEY` and redeploy |
+| Summaries empty / auto-fill warning about a model | Set `GROQ_MODEL` in Vercel to a current Groq model |

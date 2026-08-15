@@ -1347,6 +1347,33 @@ a.tag:hover {
   color: #991b1b;
 }
 
+.alert--info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.article__abstract {
+  margin-top: 32px;
+  padding: clamp(20px, 3vw, 28px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-soft, rgba(148, 163, 184, 0.08));
+}
+
+.article__abstract h2 {
+  font-size: 1.125rem;
+  margin-bottom: 12px;
+}
+
+.article__abstract p {
+  margin-bottom: 12px;
+  line-height: 1.7;
+}
+
+.article__abstract p:last-child {
+  margin-bottom: 0;
+}
+
 .empty-state {
   padding: clamp(32px, 5vw, 56px);
   border-radius: var(--radius-lg);

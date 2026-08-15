@@ -18,6 +18,7 @@ export async function PUT(
     title: body.title,
     slug: body.slug,
     excerpt: body.excerpt,
+    abstract: body.abstract,
     content: body.content,
     subjectSlug: body.subjectSlug,
     topics: body.topics,

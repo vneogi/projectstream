@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it, mock } from "node:test";
-import { chatCompletion, llmConfigured } from "../src/lib/llm.ts";
+import {
+  chatCompletion,
+  chatCompletionDetailed,
+  llmConfigured,
+} from "../src/lib/llm.ts";
 
 describe("llmConfigured", () => {
   const prevG = process.env.GROQ_API_KEY;
@@ -65,6 +69,7 @@ describe("chatCompletion", () => {
       assert.match(href, /groq\.com/);
       return {
         ok: true,
+        text: async () => "",
         json: async () => ({
           choices: [{ message: { content: "  Groq answer  " } }],
         }),
@@ -74,7 +79,9 @@ describe("chatCompletion", () => {
     const result = await chatCompletion([
       { role: "user", content: "What is gravity?" },
     ]);
-    assert.deepEqual(result, { content: "Groq answer", provider: "groq" });
+    assert.equal(result?.content, "Groq answer");
+    assert.equal(result?.provider, "groq");
+    assert.ok(result?.model);
   });
 
   it("falls back to OpenAI if Groq fails", async () => {
@@ -84,10 +91,16 @@ describe("chatCompletion", () => {
     mock.method(globalThis, "fetch", async (url: string | URL) => {
       const href = String(url);
       if (href.includes("groq.com")) {
-        return { ok: false, json: async () => ({}) };
+        return {
+          ok: false,
+          status: 400,
+          text: async () => "model_decommissioned",
+          json: async () => ({}),
+        };
       }
       return {
         ok: true,
+        text: async () => "",
         json: async () => ({
           choices: [{ message: { content: "OpenAI answer" } }],
         }),
@@ -97,9 +110,48 @@ describe("chatCompletion", () => {
     const result = await chatCompletion([
       { role: "user", content: "What is gravity?" },
     ]);
-    assert.deepEqual(result, {
-      content: "OpenAI answer",
-      provider: "openai",
+    assert.equal(result?.content, "OpenAI answer");
+    assert.equal(result?.provider, "openai");
+  });
+
+  it("reports why the call failed when every provider errors", async () => {
+    process.env.GROQ_API_KEY = "groq-key";
+
+    mock.method(globalThis, "fetch", async () => ({
+      ok: false,
+      status: 400,
+      text: async () => "model has been decommissioned",
+      json: async () => ({}),
+    }));
+
+    const outcome = await chatCompletionDetailed([
+      { role: "user", content: "hi" },
+    ]);
+    assert.equal(outcome.ok, false);
+    if (!outcome.ok) {
+      assert.ok(outcome.errors.length > 0);
+      assert.match(outcome.errors.join(" "), /decommissioned/);
+    }
+  });
+
+  it("stops trying more models when the key is rejected", async () => {
+    process.env.GROQ_API_KEY = "bad-key";
+    let calls = 0;
+
+    mock.method(globalThis, "fetch", async () => {
+      calls += 1;
+      return {
+        ok: false,
+        status: 401,
+        text: async () => "invalid api key",
+        json: async () => ({}),
+      };
     });
+
+    const outcome = await chatCompletionDetailed([
+      { role: "user", content: "hi" },
+    ]);
+    assert.equal(outcome.ok, false);
+    assert.equal(calls, 1, "should not retry other models on a 401");
   });
 });

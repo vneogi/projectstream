@@ -9,6 +9,7 @@ describe("mapPostRow", () => {
       title: "Title",
       slug: "title",
       excerpt: "Short",
+      abstract: "A longer overview of the material.",
       content: "Body",
       subject_id: "physics",
       subject_slug: "physics",
@@ -35,6 +36,7 @@ describe("mapPostRow", () => {
     assert.equal(post.filePath, "abc/notes.pdf");
     assert.equal(post.fileSize, 1024);
     assert.equal(post.authorSchool, "Class 10");
+    assert.equal(post.abstract, "A longer overview of the material.");
   });
 
   it("handles missing optional file/source fields", () => {
@@ -57,6 +59,7 @@ describe("mapPostRow", () => {
     assert.deepEqual(post.topics, []);
     assert.equal(post.filePath, undefined);
     assert.equal(post.sourceMessageId, undefined);
+    assert.equal(post.abstract, undefined);
   });
 
   it("coerces string file_size to number", () => {

@@ -28,6 +28,18 @@ var MAX_ATTACHMENTS = 5;
 var MAX_ATTACHMENT_CHARS = 40000;
 var MAX_TOTAL_CHARS = 80000;
 
+/**
+ * Submission rules. Only real student submissions should become drafts —
+ * conversation replies on an existing thread are noise.
+ */
+// Require a file attachment or a Google Slides/Docs link. Plain text emails
+// are labelled Skipped instead of creating a draft.
+var REQUIRE_MATERIAL = true;
+// "Re:" style replies never create drafts.
+var SKIP_REPLIES = true;
+// Forwards usually carry a student's original file, so they are allowed.
+var SKIP_FORWARDS = false;
+
 function setupLabels() {
   ensureLabel_(LABEL_INGESTED);
   ensureLabel_(LABEL_FAILED);
@@ -49,7 +61,7 @@ function processInbox() {
   ensureLabel_(LABEL_SKIPPED);
 
   var query =
-    "in:inbox is:unread -label:" +
+    "in:inbox is:unread -from:me -label:" +
     LABEL_INGESTED +
     " -label:" +
     LABEL_FAILED +
@@ -67,6 +79,38 @@ function processInbox() {
   }
 }
 
+/** True for "Re:" replies and messages threaded onto an earlier email. */
+function isReply_(message) {
+  var subject = message.getSubject() || "";
+  if (/^\s*(re|aw|sv|vs|antw)\s*:/i.test(subject)) return true;
+
+  try {
+    if (message.getHeader("In-Reply-To")) return true;
+    if (message.getHeader("References")) return true;
+  } catch (err) {
+    // Header lookup is unavailable in some contexts — fall back to subject.
+  }
+  return false;
+}
+
+function isForward_(message) {
+  var subject = message.getSubject() || "";
+  return /^\s*(fw|fwd)\s*:/i.test(subject);
+}
+
+/** True when the account is looking at its own outgoing mail. */
+function isFromSelf_(from) {
+  var self = Session.getActiveUser().getEmail();
+  if (!self) return false;
+  return String(from).toLowerCase().indexOf(self.toLowerCase()) !== -1;
+}
+
+function skipMessage_(message, messageId, reason) {
+  message.getThread().addLabel(ensureLabel_(LABEL_SKIPPED));
+  message.markRead();
+  Logger.log("Skipped " + messageId + ": " + reason);
+}
+
 function processMessage_(message, webhookUrl, secret) {
   var messageId = message.getId();
   var subject = message.getSubject() || "";
@@ -77,6 +121,21 @@ function processMessage_(message, webhookUrl, secret) {
     ? message.getDate().toISOString()
     : new Date().toISOString();
 
+  if (isFromSelf_(from)) {
+    skipMessage_(message, messageId, "sent by this account");
+    return;
+  }
+
+  if (SKIP_REPLIES && isReply_(message)) {
+    skipMessage_(message, messageId, "reply on an existing thread");
+    return;
+  }
+
+  if (SKIP_FORWARDS && isForward_(message)) {
+    skipMessage_(message, messageId, "forwarded message");
+    return;
+  }
+
   var attachments = extractAttachments_(message);
   var linkedDocs = extractLinkedDocs_(body);
   var allExtracted = attachments.concat(linkedDocs);
@@ -86,14 +145,24 @@ function processMessage_(message, webhookUrl, secret) {
     attachmentTextLen += (allExtracted[a].text || "").length;
   }
 
+  // A submission must carry study material — a PDF/PPTX/DOCX attachment or a
+  // Google Slides/Docs link. Plain conversation never becomes a draft.
+  if (REQUIRE_MATERIAL && allExtracted.length === 0) {
+    skipMessage_(
+      message,
+      messageId,
+      "no attachment or Google Slides/Docs link with readable text",
+    );
+    return;
+  }
+
   // Skip only if both body and attachments are empty/noise
   if (
     body.replace(/\s+/g, "").length < 30 &&
     attachmentTextLen < 40 &&
     subject.length < 8
   ) {
-    message.getThread().addLabel(ensureLabel_(LABEL_SKIPPED));
-    Logger.log("Skipped empty message: " + messageId);
+    skipMessage_(message, messageId, "no extractable text");
     return;
   }
 
@@ -136,7 +205,18 @@ function processMessage_(message, webhookUrl, secret) {
         Logger.log("Could not parse ingest response for uploads: " + parseErr);
       }
     } else {
-      message.getThread().addLabel(ensureLabel_(LABEL_FAILED));
+      // The server also enforces the "must have material" rule.
+      var serverSkipped = false;
+      try {
+        var errBody = JSON.parse(text);
+        serverSkipped = Boolean(errBody && errBody.skipped);
+      } catch (e) {}
+
+      if (serverSkipped) {
+        skipMessage_(message, messageId, "server rejected as non-submission");
+      } else {
+        message.getThread().addLabel(ensureLabel_(LABEL_FAILED));
+      }
     }
   } catch (err) {
     Logger.log("Error for " + messageId + ": " + err);

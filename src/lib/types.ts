@@ -12,7 +12,10 @@ export interface Post {
   id: string;
   title: string;
   slug: string;
+  /** 2–3 line summary shown on cards and used by search / Ask AI. */
   excerpt: string;
+  /** 10–20 line overview shown publicly on the article page. */
+  abstract?: string;
   content: string;
   subjectId: string;
   subjectSlug: string;

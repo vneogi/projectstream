@@ -34,6 +34,10 @@ export default async function PostPage({
   const user = await getSessionUser();
   const isLoggedIn = Boolean(user);
   const paragraphs = post.content.split("\n\n").filter(Boolean);
+  const abstractParagraphs = (post.abstract ?? "")
+    .split("\n\n")
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   return (
     <section className="section section--tight">
@@ -66,6 +70,15 @@ export default async function PostPage({
             )}
           </header>
 
+          {abstractParagraphs.length > 0 && (
+            <section className="article__abstract" id="abstract">
+              <h2>Abstract</h2>
+              {abstractParagraphs.map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </section>
+          )}
+
           <MaterialAccess
             postId={post.id}
             slug={post.slug}
@@ -76,18 +89,17 @@ export default async function PostPage({
 
           {isLoggedIn ? (
             <div className="prose" style={{ marginTop: "32px" }}>
+              <h2 className="feature__title">Full notes</h2>
               {paragraphs.map((para, i) => (
                 <p key={i}>{para}</p>
               ))}
             </div>
           ) : (
             <div className="prose" style={{ marginTop: "32px" }}>
-              <p>
-                <strong>Public summary:</strong> {post.excerpt}
-              </p>
               <p style={{ color: "var(--text-muted)" }}>
                 Sign in to read the full notes and download the original
-                PDF/PPTX. Search and Ask AI remain available without an account.
+                PDF/PPTX. The abstract, search, and Ask AI remain available
+                without an account.
               </p>
             </div>
           )}

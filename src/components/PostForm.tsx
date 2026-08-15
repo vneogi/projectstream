@@ -23,6 +23,7 @@ export function PostForm({
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
+  const [abstract, setAbstract] = useState(post?.abstract ?? "");
   const [content, setContent] = useState(post?.content ?? "");
   const [subjectSlug, setSubjectSlug] = useState(
     post?.subjectSlug ?? subjects[0]?.slug ?? "",
@@ -32,6 +33,8 @@ export function PostForm({
   const [authorSchool, setAuthorSchool] = useState(post?.authorSchool ?? "");
   const [status, setStatus] = useState<PostStatus>(post?.status ?? "draft");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [warning, setWarning] = useState("");
   const [loading, setLoading] = useState(false);
   const [enriching, setEnriching] = useState(false);
 
@@ -43,21 +46,38 @@ export function PostForm({
   async function handleEnrich() {
     setEnriching(true);
     setError("");
+    setNotice("");
+    setWarning("");
     try {
       const res = await fetch("/api/admin/enrich", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({
+          content,
+          fromName: authorName || undefined,
+          subjectHint: subjectSlug || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Auto-fill failed");
 
       if (data.title) handleTitleChange(data.title);
       if (data.excerpt) setExcerpt(data.excerpt);
+      if (data.abstract) setAbstract(data.abstract);
       if (data.content) setContent(data.content);
       if (data.subjectSlug) setSubjectSlug(data.subjectSlug);
-      if (Array.isArray(data.topics)) setTopics(data.topics.join(", "));
+      if (Array.isArray(data.topics) && data.topics.length > 0) {
+        setTopics(data.topics.join(", "));
+      }
       if (data.authorName) setAuthorName(data.authorName);
+
+      if (data.warning) {
+        setWarning(data.warning);
+      } else {
+        setNotice(
+          `Filled by ${data.provider ?? "AI"}${data.model ? ` (${data.model})` : ""}. Review everything before publishing.`,
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Auto-fill failed");
     } finally {
@@ -74,6 +94,7 @@ export function PostForm({
       title,
       slug,
       excerpt,
+      abstract,
       content,
       subjectSlug,
       topics: topics
@@ -113,7 +134,7 @@ export function PostForm({
         </label>
         <p className="field__hint">
           Separate paragraphs with a blank line. Then use Auto-fill to generate
-          title, summary, subject, and topics.
+          the author, subject, topics, summary, and abstract.
         </p>
         <textarea
           id="content"
@@ -132,10 +153,15 @@ export function PostForm({
           onClick={handleEnrich}
           disabled={enriching || content.trim().length < 40}
         >
-          {enriching ? "Working…" : "Auto-fill title, summary & subject"}
+          {enriching
+            ? "Reading the notes…"
+            : "Auto-fill author, subject, topics, summary & abstract"}
           <Icon name="sparkles" />
         </button>
       </div>
+
+      {notice && <p className="alert alert--info">{notice}</p>}
+      {warning && <p className="alert alert--error">{warning}</p>}
 
       <div className="field">
         <label className="field__label" htmlFor="title">
@@ -186,13 +212,30 @@ export function PostForm({
         <label className="field__label" htmlFor="excerpt">
           Short summary (shown on cards + used by Ask AI)
         </label>
+        <p className="field__hint">2–3 lines.</p>
         <textarea
           id="excerpt"
           className="textarea"
           value={excerpt}
           onChange={(e) => setExcerpt(e.target.value)}
-          rows={2}
+          rows={3}
           required
+        />
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="abstract">
+          Abstract (shown publicly on the article page)
+        </label>
+        <p className="field__hint">
+          10–20 lines. This is what a student reads before downloading the PDF.
+        </p>
+        <textarea
+          id="abstract"
+          className="textarea"
+          value={abstract}
+          onChange={(e) => setAbstract(e.target.value)}
+          rows={10}
         />
       </div>
 

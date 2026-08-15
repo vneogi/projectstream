@@ -3,8 +3,8 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { enrichSubmission } from "@/lib/enrich";
 
 /**
- * Admin helper: turn raw student notes (from email) into title, summary,
- * subject, topics, and cleaned content — still requires human publish.
+ * Admin helper: turn raw student notes (from email) into title, author,
+ * subject, topics, summary, and abstract — still requires human publish.
  */
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) {
@@ -20,15 +20,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const enriched = await enrichSubmission(raw);
-
-  if (!process.env.GROQ_API_KEY && !process.env.OPENAI_API_KEY) {
-    return NextResponse.json({
-      ...enriched,
-      warning:
-        "No LLM key configured — used a simple fallback. Add GROQ_API_KEY for better auto-fill.",
-    });
-  }
+  const enriched = await enrichSubmission(raw, {
+    fromName: body.fromName ? String(body.fromName) : undefined,
+    subjectHint: body.subjectHint ? String(body.subjectHint) : undefined,
+  });
 
   return NextResponse.json(enriched);
 }

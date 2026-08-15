@@ -29,6 +29,15 @@ describe("enrichSubmission (fallback, no LLM)", () => {
     assert.ok(result.excerpt.length <= 220);
     assert.equal(result.subjectSlug, "general-stem");
     assert.ok(result.topics.includes("email-submission"));
+    assert.ok(result.abstract.length > 0);
+  });
+
+  it("explains why AI did not run so admins are not left guessing", async () => {
+    const result = await enrichSubmission(
+      "Long enough student notes about refraction of light for a Class 10 project.",
+    );
+    assert.ok(result.warning);
+    assert.match(result.warning, /GROQ_API_KEY|OPENAI_API_KEY/);
   });
 
   it("honours subjectHint when provided", async () => {
@@ -66,9 +75,10 @@ describe("enrichSubmission (LLM JSON parse)", () => {
     else process.env.GROQ_API_KEY = prevGroq;
   });
 
-  it("parses LLM JSON and maps a valid subject", async () => {
+  it("parses LLM JSON and maps every card field", async () => {
     mock.method(globalThis, "fetch", async () => ({
       ok: true,
+      text: async () => "",
       json: async () => ({
         choices: [
           {
@@ -76,8 +86,10 @@ describe("enrichSubmission (LLM JSON parse)", () => {
               content: JSON.stringify({
                 title: "Cell division: mitosis",
                 excerpt: "A clear walkthrough of mitosis stages for Class 10.",
+                abstract:
+                  "This deck explains mitosis stage by stage.\n\nIt covers prophase through telophase with diagrams.",
                 subjectSlug: "biology",
-                topics: ["mitosis", "cells"],
+                topics: ["Mitosis", "Cells"],
                 authorName: "Riya",
                 content: "Mitosis produces two identical daughter cells.",
               }),
@@ -93,13 +105,16 @@ describe("enrichSubmission (LLM JSON parse)", () => {
     assert.equal(result.provider, "groq");
     assert.equal(result.title, "Cell division: mitosis");
     assert.equal(result.subjectSlug, "biology");
-    assert.deepEqual(result.topics, ["mitosis", "cells"]);
+    assert.deepEqual(result.topics, ["mitosis", "cells"], "topics lowercased");
     assert.equal(result.authorName, "Riya");
+    assert.match(result.abstract, /stage by stage/);
+    assert.equal(result.warning, undefined);
   });
 
   it("falls back when LLM returns invalid JSON", async () => {
     mock.method(globalThis, "fetch", async () => ({
       ok: true,
+      text: async () => "",
       json: async () => ({
         choices: [{ message: { content: "not-json-at-all" } }],
       }),
@@ -110,11 +125,28 @@ describe("enrichSubmission (LLM JSON parse)", () => {
     );
     assert.equal(result.provider, null);
     assert.ok(result.title.length > 0);
+    assert.match(result.warning ?? "", /not valid JSON/i);
+  });
+
+  it("surfaces a decommissioned-model error instead of failing silently", async () => {
+    mock.method(globalThis, "fetch", async () => ({
+      ok: false,
+      status: 400,
+      text: async () => "model has been decommissioned",
+      json: async () => ({}),
+    }));
+
+    const result = await enrichSubmission(
+      "Enough student text to attempt an AI summary of a physics submission.",
+    );
+    assert.equal(result.provider, null);
+    assert.match(result.warning ?? "", /decommissioned/);
   });
 
   it("rejects unknown subjectSlug from the model", async () => {
     mock.method(globalThis, "fetch", async () => ({
       ok: true,
+      text: async () => "",
       json: async () => ({
         choices: [
           {
