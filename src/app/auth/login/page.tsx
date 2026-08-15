@@ -6,6 +6,10 @@ import { Suspense, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { createClient } from "@/lib/supabase/client";
 
+// Inlined at build time by Next.js — a redeploy is required after changing them in Vercel.
+const hasUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const hasAnonKey = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
@@ -13,16 +17,20 @@ function LoginForm() {
   const [loading, setLoading] = useState<"google" | "github" | null>(null);
   const [localError, setLocalError] = useState("");
 
+  const missingVars = [
+    hasUrl ? null : "NEXT_PUBLIC_SUPABASE_URL",
+    hasAnonKey ? null : "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  ].filter(Boolean) as string[];
+
   async function signIn(provider: "google" | "github") {
     setLoading(provider);
     setLocalError("");
     try {
-      if (
-        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      ) {
+      if (missingVars.length > 0) {
         throw new Error(
-          "Student login is not configured yet. Add Supabase Auth in Vercel (see AUTH.md).",
+          `Student login is not configured yet. Missing in this deployment: ${missingVars.join(
+            " and ",
+          )}. Add it in Vercel → Settings → Environment Variables (Production), then Redeploy. See AUTH.md.`,
         );
       }
       const supabase = createClient();
@@ -50,6 +58,14 @@ function LoginForm() {
         </p>
 
         <div className="panel form">
+          {missingVars.length > 0 && (
+            <p className="alert alert--error">
+              Setup incomplete — this deployment was built without{" "}
+              {missingVars.join(" and ")}. Add the variable(s) in Vercel for the
+              Production environment, then redeploy.
+            </p>
+          )}
+
           {(error || localError) && (
             <p className="alert alert--error" role="alert">
               {localError || "Sign-in did not complete. Please try again."}

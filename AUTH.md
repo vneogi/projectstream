@@ -196,10 +196,41 @@ Both are required.
 
 | Error | Fix |
 |-------|-----|
+| “Student login is not configured yet” | See the section below — the deployment was built without the `NEXT_PUBLIC_*` keys |
 | `redirect_uri_mismatch` | Google Cloud redirect URI must be exactly `https://YOUR_REF.supabase.co/auth/v1/callback` |
 | Stuck / “error=auth” | Add `https://your-site.vercel.app/auth/callback` in Supabase Redirect URLs; redeploy |
 | “Access blocked: app is in testing” | Add that Google account under OAuth consent screen → Test users |
 | Sign in button does nothing useful | Check Vercel has `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` and you redeployed |
+
+---
+
+## Fixing “Student login is not configured yet”
+
+This means the **browser bundle** was built without `NEXT_PUBLIC_SUPABASE_URL` and/or
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`. The login page now names which one is missing.
+
+Why it happens: variables starting with `NEXT_PUBLIC_` are **baked into the JavaScript at build
+time**, not read live at runtime. Adding them in Vercel does nothing until you build again.
+
+Check in this order:
+
+1. **Do the variables exist?**  
+   Vercel → Settings → Environment Variables. Names must match exactly (no spaces, no typos):
+   ```text
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY
+   ```
+2. **Is the Production environment ticked?**  
+   If only Preview/Development is selected, the live site will not get them.
+3. **Which Supabase key is the “anon” key?**  
+   In newer Supabase projects, Settings → API shows a **Publishable key** (`sb_publishable_…`);
+   older projects show **anon public** (`eyJ…`). Either one is the correct value for
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Do **not** use the `service_role` / secret key here.
+4. **Redeploy after saving.**  
+   Deployments → latest → **⋯** → **Redeploy**. Wait for it to finish, then hard-refresh the page
+   (Cmd+Shift+R) so you are not seeing a cached bundle.
+5. **Are you testing the right URL?**  
+   A preview deployment only has Preview-scoped variables.
 
 ---
 
