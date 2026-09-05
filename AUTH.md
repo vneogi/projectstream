@@ -252,7 +252,7 @@ Do this on **projectsteamcollective@gmail.com**.
 | `WEBHOOK_URL` | `https://projectstream.vercel.app/api/ingest/email` |
 | `INGEST_SECRET` | **same** string as Vercel `INGEST_SECRET` |
 
-7. Run `setupLabels` once (approve permissions)
+7. Run `removeLegacyLabels` once (deletes old Ingested / Failed / Skipped labels)
 8. Run `testWebhookOnly` once → check `/admin` for a new draft
 9. Ensure a time trigger exists on `processInbox` (every 5–10 minutes)
 

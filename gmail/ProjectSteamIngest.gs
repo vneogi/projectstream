@@ -13,16 +13,14 @@
  * 4. Project Settings → Script properties:
  *      WEBHOOK_URL  = https://YOUR-SITE.vercel.app/api/ingest/email
  *      INGEST_SECRET = (same as Vercel INGEST_SECRET)
- * 5. Run setupLabels() once (approve Gmail, Drive, Slides, Docs, UrlFetch)
+ * 5. Run removeLegacyLabels() once (deletes old ProjectSTEAM Ingested/Failed/Skipped labels)
+ *    or run setup() once to approve Gmail, Drive, Slides, Docs, UrlFetch
  * 6. Run processInbox() once to test
  * 7. Triggers → processInbox every 5–10 minutes
  *
  * SAFETY: website creates DRAFTS only — never auto-publishes.
  */
 
-var LABEL_INGESTED = "ProjectSTEAM/Ingested";
-var LABEL_FAILED = "ProjectSTEAM/Failed";
-var LABEL_SKIPPED = "ProjectSTEAM/Skipped";
 var MAX_THREADS = 10;
 var MAX_ATTACHMENTS = 5;
 var MAX_ATTACHMENT_CHARS = 40000;
@@ -33,18 +31,43 @@ var MAX_TOTAL_CHARS = 80000;
  * conversation replies on an existing thread are noise.
  */
 // Require a file attachment or a Google Slides/Docs link. Plain text emails
-// are labelled Skipped instead of creating a draft.
+// are ignored instead of creating a draft.
 var REQUIRE_MATERIAL = true;
 // "Re:" style replies never create drafts.
 var SKIP_REPLIES = true;
 // Forwards usually carry a student's original file, so they are allowed.
 var SKIP_FORWARDS = false;
 
+/** One-time: approve permissions. Does not create Gmail labels. */
+function setup() {
+  Logger.log("Permissions OK. Confirm Drive API is enabled under Services.");
+}
+
+/** Kept so older docs still work — now only removes the old Project STEAM labels. */
 function setupLabels() {
-  ensureLabel_(LABEL_INGESTED);
-  ensureLabel_(LABEL_FAILED);
-  ensureLabel_(LABEL_SKIPPED);
-  Logger.log("Labels ready. Also confirm Drive API is enabled under Services.");
+  removeLegacyLabels();
+}
+
+/**
+ * Deletes Ingested / Failed / Skipped (and the parent ProjectSTEAM label if empty).
+ * Your own Gmail labels are left untouched.
+ */
+function removeLegacyLabels() {
+  var names = [
+    "ProjectSTEAM/Ingested",
+    "ProjectSTEAM/Failed",
+    "ProjectSTEAM/Skipped",
+    "ProjectSTEAM",
+  ];
+  for (var i = 0; i < names.length; i++) {
+    var label = GmailApp.getUserLabelByName(names[i]);
+    if (!label) {
+      Logger.log("Already gone: " + names[i]);
+      continue;
+    }
+    label.deleteLabel();
+    Logger.log("Deleted label: " + names[i]);
+  }
 }
 
 function processInbox() {
@@ -56,17 +79,7 @@ function processInbox() {
     throw new Error("Set Script properties WEBHOOK_URL and INGEST_SECRET first.");
   }
 
-  ensureLabel_(LABEL_INGESTED);
-  ensureLabel_(LABEL_FAILED);
-  ensureLabel_(LABEL_SKIPPED);
-
-  var query =
-    "in:inbox is:unread -from:me -label:" +
-    LABEL_INGESTED +
-    " -label:" +
-    LABEL_FAILED +
-    " -label:" +
-    LABEL_SKIPPED;
+  var query = "in:inbox is:unread -from:me";
 
   var threads = GmailApp.search(query, 0, MAX_THREADS);
   Logger.log("Found " + threads.length + " thread(s)");
@@ -106,7 +119,6 @@ function isFromSelf_(from) {
 }
 
 function skipMessage_(message, messageId, reason) {
-  message.getThread().addLabel(ensureLabel_(LABEL_SKIPPED));
   message.markRead();
   Logger.log("Skipped " + messageId + ": " + reason);
 }
@@ -192,7 +204,6 @@ function processMessage_(message, webhookUrl, secret) {
     Logger.log("Ingest " + messageId + " → " + code + " " + text);
 
     if (code >= 200 && code < 300) {
-      message.getThread().addLabel(ensureLabel_(LABEL_INGESTED));
       message.markRead();
 
       // Upload original PDF/PPTX for login-only download (≤ ~3.5MB each)
@@ -215,12 +226,11 @@ function processMessage_(message, webhookUrl, secret) {
       if (serverSkipped) {
         skipMessage_(message, messageId, "server rejected as non-submission");
       } else {
-        message.getThread().addLabel(ensureLabel_(LABEL_FAILED));
+        Logger.log("Ingest failed for " + messageId + " (left unread so it can retry)");
       }
     }
   } catch (err) {
     Logger.log("Error for " + messageId + ": " + err);
-    message.getThread().addLabel(ensureLabel_(LABEL_FAILED));
   }
 }
 
@@ -529,12 +539,6 @@ function uploadOriginalFiles_(message, webhookUrl, secret, postId, messageId) {
       Logger.log("Upload failed for " + name + ": " + err);
     }
   }
-}
-
-function ensureLabel_(name) {
-  var label = GmailApp.getUserLabelByName(name);
-  if (!label) label = GmailApp.createLabel(name);
-  return label;
 }
 
 function extractName_(fromHeader) {

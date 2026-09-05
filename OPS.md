@@ -64,7 +64,7 @@ Quick checklist:
 2. Set `INGEST_SECRET` (and Supabase keys) in Vercel → Redeploy
 3. Paste `gmail/ProjectSteamIngest.gs` into Apps Script on that Gmail account
 4. Add Script properties `WEBHOOK_URL` + `INGEST_SECRET`
-5. Run `setupLabels`, then `testWebhookOnly`, then add a 5–10 min trigger on `processInbox`
+5. Run `removeLegacyLabels` once (clears old Ingested / Failed / Skipped labels), then `testWebhookOnly`, then add a 5–10 min trigger on `processInbox`
 
 **Never auto-publishes.** Emails become drafts only.
 

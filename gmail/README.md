@@ -41,7 +41,7 @@ Supabase draft
    |----------|--------|
    | `WEBHOOK_URL` | `https://YOUR-DOMAIN.vercel.app/api/ingest/email` |
    | `INGEST_SECRET` | same as Vercel |
-6. Run `setupLabels` → approve permissions (Gmail, Drive, Docs, Slides, external URL)
+6. Run `removeLegacyLabels` once (deletes old Ingested / Failed / Skipped labels). Approve Gmail, Drive, Docs, Slides, and external URL if asked.
 7. Run `testWebhookOnly` → check `/admin` for a draft
 8. Trigger: `processInbox` every 5–10 minutes
 
@@ -49,8 +49,9 @@ If you already installed an older script, **re-paste** this file and re-run once
 
 ## What becomes a draft
 
-Only real submissions are ingested. Everything else is labelled
-`ProjectSTEAM/Skipped` and left alone.
+Only real submissions are ingested. Replies and emails without attachments are
+marked read and left alone. The script does **not** create Gmail labels — use
+your own.
 
 | Email | Result |
 |-------|--------|
