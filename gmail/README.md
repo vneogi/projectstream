@@ -27,7 +27,7 @@ Supabase draft
    - `INGEST_SECRET`
    - `GROQ_API_KEY` (recommended — summaries from long slide decks)
 3. Ask students to:
-   - Attach PDF/PPTX, **or**
+   - Attach PDF/PPTX/Word/image, **or**
    - Share Google Slides with `projectsteamcollective@gmail.com` (or “Anyone with the link”)
 
 ## Install / update Apps Script
@@ -55,7 +55,7 @@ your own.
 
 | Email | Result |
 |-------|--------|
-| New email with PDF / PPTX / DOCX attached | **Draft created** |
+| New email with PDF / PPTX / DOCX / image / spreadsheet attached | **Draft created** |
 | New email with a Google Slides / Docs link | **Draft created** |
 | `Re:` reply on an existing thread | Skipped |
 | Any message threaded onto an earlier email | Skipped |
@@ -80,13 +80,15 @@ drafts from plain replies.
 | Student sends | How text is extracted |
 |---------------|------------------------|
 | `.pdf` | Convert to Google Doc via Drive → read text |
-| `.pptx` / `.ppt` | Convert to Google Slides → read slide + notes text |
-| `.docx` / `.doc` | Convert to Google Doc → read text |
+| `.pptx` / `.ppt` / `.odp` | Convert to Google Slides → read slide + notes text |
+| `.docx` / `.doc` / `.odt` / `.rtf` | Convert to Google Doc → read text |
+| `.png` `.jpg` `.jpeg` `.gif` `.webp` `.img` | OCR via Drive when possible; original image is stored either way |
+| `.xlsx` `.xls` `.csv` `.ods` | Convert to Google Sheets → read cell text |
 | Google Slides link | Open presentation (if shared) → read slides |
 | Google Doc link | Open doc (if shared) → read body |
 | Plain email text | Included as-is |
 
-Then the website LLM (Groq/OpenAI) builds the **title, author, subject,
+Then the website LLM (Groq/OpenAI) builds the **title, subject,
 topics, summary (2–3 lines), and abstract (10–20 lines)** for the draft.
 
 ## Limits & caveats

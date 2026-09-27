@@ -77,7 +77,6 @@ function haystack(post: Post): string {
     post.subjectName,
     post.subjectSlug,
     ...post.topics,
-    post.authorName,
   ]
     .join(" ")
     .toLowerCase();

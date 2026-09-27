@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Icon } from "./Icon";
 import { subjectIcon } from "@/lib/subject-icons";
-import type { Post } from "@/lib/types";
+import { downloadLabel } from "@/lib/file-types";
 
 export function PostCard({ post }: { post: Post }) {
   return (
@@ -22,13 +22,11 @@ export function PostCard({ post }: { post: Post }) {
         </div>
       )}
       <div className="card__meta">
-        <span>{post.authorName}</span>
-        <span>·</span>
         <span>{new Date(post.createdAt).toLocaleDateString("en-IN")}</span>
         {post.filePath ? (
           <>
             <span>·</span>
-            <span>PDF · sign in to download</span>
+            <span>{downloadLabel(post.fileName)} · sign in to download</span>
           </>
         ) : null}
       </div>

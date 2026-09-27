@@ -234,8 +234,71 @@ function processMessage_(message, webhookUrl, secret) {
   }
 }
 
+function endsWithAny_(name, extensions) {
+  for (var i = 0; i < extensions.length; i++) {
+    if (name.endsWith(extensions[i])) return true;
+  }
+  return false;
+}
+
+function isImageAttachment_(name, mime) {
+  return (
+    mime.indexOf("image/") === 0 ||
+    endsWithAny_(name, [
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".webp",
+      ".bmp",
+      ".tif",
+      ".tiff",
+      ".heic",
+      ".heif",
+      ".img",
+    ])
+  );
+}
+
+function isSheetAttachment_(name, mime) {
+  return (
+    mime.indexOf("spreadsheet") !== -1 ||
+    mime.indexOf("excel") !== -1 ||
+    endsWithAny_(name, [".xls", ".xlsx", ".csv", ".ods"])
+  );
+}
+
+function isAllowedMaterial_(name, mime) {
+  if (isImageAttachment_(name, mime) || isSheetAttachment_(name, mime)) {
+    return true;
+  }
+  return (
+    mime.indexOf("pdf") !== -1 ||
+    mime.indexOf("presentation") !== -1 ||
+    mime.indexOf("powerpoint") !== -1 ||
+    mime.indexOf("msword") !== -1 ||
+    mime.indexOf("wordprocessingml") !== -1 ||
+    mime.indexOf("opendocument") !== -1 ||
+    mime.indexOf("rtf") !== -1 ||
+    mime.indexOf("text/") === 0 ||
+    endsWithAny_(name, [
+      ".pdf",
+      ".ppt",
+      ".pptx",
+      ".odp",
+      ".doc",
+      ".docx",
+      ".odt",
+      ".rtf",
+      ".txt",
+    ])
+  );
+}
+
 /**
- * Pull text from PDF / PPTX / PPT / Google-native attachments.
+ * Pull text from PDF / PPTX / Word / images / sheets.
+ * Images and files with little text still count as submissions so the
+ * original can be stored for download.
  */
 function extractAttachments_(message) {
   var results = [];
@@ -250,59 +313,62 @@ function extractAttachments_(message) {
     var mime = (blob.getContentType() || "").toLowerCase();
     var lower = name.toLowerCase();
 
-    try {
-      var text = "";
-      var kind = "other";
+    if (!isAllowedMaterial_(lower, mime)) {
+      Logger.log("Skipping unsupported attachment: " + name + " (" + mime + ")");
+      continue;
+    }
 
-      if (
-        mime.indexOf("pdf") !== -1 ||
-        lower.endsWith(".pdf")
-      ) {
+    var text = "";
+    var kind = "file";
+
+    try {
+      if (mime.indexOf("pdf") !== -1 || lower.endsWith(".pdf")) {
         kind = "pdf";
         text = extractPdfText_(blob);
       } else if (
         mime.indexOf("presentation") !== -1 ||
         mime.indexOf("powerpoint") !== -1 ||
-        lower.endsWith(".pptx") ||
-        lower.endsWith(".ppt")
+        endsWithAny_(lower, [".pptx", ".ppt", ".odp"])
       ) {
         kind = "pptx";
         text = extractPptxText_(blob);
       } else if (
         mime.indexOf("msword") !== -1 ||
         mime.indexOf("wordprocessingml") !== -1 ||
-        lower.endsWith(".docx") ||
-        lower.endsWith(".doc")
+        mime.indexOf("opendocument.text") !== -1 ||
+        mime.indexOf("rtf") !== -1 ||
+        endsWithAny_(lower, [".docx", ".doc", ".odt", ".rtf"])
       ) {
         kind = "docx";
         text = extractDocText_(blob);
+      } else if (isSheetAttachment_(lower, mime)) {
+        kind = "spreadsheet";
+        text = extractSheetText_(blob);
+      } else if (isImageAttachment_(lower, mime)) {
+        kind = "image";
+        text = extractImageText_(blob);
       } else if (mime.indexOf("text/") === 0 || lower.endsWith(".txt")) {
         kind = "text";
         text = blob.getDataAsString();
-      } else {
-        Logger.log("Skipping unsupported attachment: " + name + " (" + mime + ")");
-        continue;
       }
-
-      text = cleanText_(text).slice(0, MAX_ATTACHMENT_CHARS);
-      if (text.length < 20) {
-        Logger.log(
-          "Little/no text from " +
-            name +
-            " (scanned image PDF?). Skipping.",
-        );
-        continue;
-      }
-
-      results.push({
-        name: name,
-        type: kind,
-        mimeType: mime,
-        text: text,
-      });
     } catch (err) {
       Logger.log("Failed to extract " + name + ": " + err);
     }
+
+    text = cleanText_(text).slice(0, MAX_ATTACHMENT_CHARS);
+    if (text.length < 20) {
+      text =
+        'Student submitted file "' +
+        name +
+        '". Little or no extractable text (photo or scanned page). Original is stored for download.';
+    }
+
+    results.push({
+      name: name,
+      type: kind,
+      mimeType: mime,
+      text: text,
+    });
   }
 
   return results;
@@ -400,7 +466,7 @@ function extractPptxText_(blob) {
   }
 }
 
-/** DOCX/DOC → temporary Google Doc → text */
+/** DOCX/DOC/ODT/RTF → temporary Google Doc → text */
 function extractDocText_(blob) {
   assertDrive_();
   var resource = {
@@ -410,6 +476,60 @@ function extractDocText_(blob) {
   var file = Drive.Files.insert(resource, blob, { convert: true });
   try {
     return DocumentApp.openById(file.id).getBody().getText();
+  } finally {
+    try {
+      Drive.Files.remove(file.id);
+    } catch (e) {}
+  }
+}
+
+/** PNG/JPG and similar — OCR via Drive when possible */
+function extractImageText_(blob) {
+  assertDrive_();
+  var resource = {
+    title: "steam-temp-img-" + Date.now(),
+    mimeType: MimeType.GOOGLE_DOCS,
+  };
+  var file = Drive.Files.insert(resource, blob, {
+    convert: true,
+    ocr: true,
+    ocrLanguage: "en",
+  });
+  try {
+    return DocumentApp.openById(file.id).getBody().getText();
+  } finally {
+    try {
+      Drive.Files.remove(file.id);
+    } catch (e) {}
+  }
+}
+
+/** XLS/XLSX/CSV → temporary Google Sheet → cell text */
+function extractSheetText_(blob) {
+  assertDrive_();
+  var resource = {
+    title: "steam-temp-sheet-" + Date.now(),
+    mimeType: MimeType.GOOGLE_SHEETS,
+  };
+  var file = Drive.Files.insert(resource, blob, { convert: true });
+  try {
+    var sheet = SpreadsheetApp.openById(file.id);
+    var tabs = sheet.getSheets();
+    var parts = [];
+    for (var i = 0; i < tabs.length && i < 8; i++) {
+      parts.push("--- Sheet: " + tabs[i].getName() + " ---");
+      var values = tabs[i].getDataRange().getDisplayValues();
+      var rows = Math.min(values.length, 80);
+      for (var r = 0; r < rows; r++) {
+        var line = values[r]
+          .slice(0, 12)
+          .join(" | ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (line) parts.push(line);
+      }
+    }
+    return parts.join("\n");
   } finally {
     try {
       Drive.Files.remove(file.id);
@@ -506,16 +626,7 @@ function uploadOriginalFiles_(message, webhookUrl, secret, postId, messageId) {
     var name = blob.getName() || "attachment";
     var lower = name.toLowerCase();
     var mime = (blob.getContentType() || "").toLowerCase();
-    var allowed =
-      lower.endsWith(".pdf") ||
-      lower.endsWith(".pptx") ||
-      lower.endsWith(".ppt") ||
-      lower.endsWith(".docx") ||
-      mime.indexOf("pdf") !== -1 ||
-      mime.indexOf("presentation") !== -1 ||
-      mime.indexOf("powerpoint") !== -1;
-
-    if (!allowed) continue;
+    if (!isAllowedMaterial_(lower, mime)) continue;
 
     if (blob.getBytes().length > maxBytes) {
       Logger.log("Skip upload (too large >3.5MB): " + name);

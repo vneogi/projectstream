@@ -17,8 +17,6 @@ export async function POST(request: Request) {
     content: body.content,
     subjectSlug: body.subjectSlug,
     topics: body.topics ?? [],
-    authorName: body.authorName,
-    authorSchool: body.authorSchool,
     language: body.language ?? "en",
     status: body.status as PostStatus,
   });

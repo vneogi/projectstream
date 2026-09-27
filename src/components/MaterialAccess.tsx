@@ -61,7 +61,7 @@ export function MaterialAccess({
         Full notes are shown below
         {hasFile
           ? `. You can also download ${fileName || "the original file"}.`
-          : ". (No PDF/PPTX was attached for this article yet.)"}
+          : ". (No original file was attached for this article yet.)"}
       </p>
       {hasFile && (
         <a href={`/api/download/${postId}`} className="btn btn--primary">

@@ -15,7 +15,6 @@ export async function GET(request: Request) {
       subjectName: p.subjectName,
       subjectSlug: p.subjectSlug,
       topics: p.topics,
-      authorName: p.authorName,
       hasFile: Boolean(p.filePath),
       createdAt: p.createdAt,
     })),

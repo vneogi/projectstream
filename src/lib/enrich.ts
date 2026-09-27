@@ -86,7 +86,6 @@ export async function enrichSubmission(
         content: `You prepare STEM educational posts for Project STEAM, a student learning library in India.
 Return ONLY valid JSON with these keys:
 - title: clear short title
-- authorName: the student author's name if the text states one, else "Student contributor"
 - subjectSlug: exactly one of [${subjectList}]
 - topics: array of 2–5 short lowercase topic tags
 - excerpt: 2–3 line summary for cards and search (max 240 chars)

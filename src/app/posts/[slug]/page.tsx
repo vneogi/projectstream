@@ -51,8 +51,6 @@ export default async function PostPage({
             <h1 className="article__title">{post.title}</h1>
             <p className="article__lead">{post.excerpt}</p>
             <div className="meta-row">
-              <span>By {post.authorName}</span>
-              {post.authorSchool && <span>{post.authorSchool}</span>}
               <span>{new Date(post.createdAt).toLocaleDateString("en-IN")}</span>
             </div>
             {post.topics.length > 0 && (

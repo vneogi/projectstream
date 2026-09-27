@@ -60,7 +60,6 @@ export async function POST(request: Request) {
   const messageId = String(body.messageId ?? "").trim();
   const subject = String(body.subject ?? "").trim();
   const from = String(body.from ?? "").trim();
-  const fromName = String(body.fromName ?? "").trim();
   const plainBody = String(body.body ?? body.plainBody ?? "").trim();
   const receivedAt = String(body.receivedAt ?? "").trim();
   const attachments = Array.isArray(body.attachments)
@@ -74,11 +73,16 @@ export async function POST(request: Request) {
   const attachmentBlocks = attachments
     .map((att) => {
       const text = String(att.text ?? "").trim();
-      if (text.length < 20) return "";
       const name = String(att.name ?? "attachment");
       const type = String(att.type ?? "file");
+      const bodyText =
+        text.length >= 20
+          ? text.slice(0, 40000)
+          : 'Student submitted file "' +
+            name +
+            '". Little extractable text — original is stored for download.';
       const url = att.sourceUrl ? `\nSource: ${att.sourceUrl}` : "";
-      return `### Attachment (${type}): ${name}${url}\n\n${text.slice(0, 40000)}`;
+      return `### Attachment (${type}): ${name}${url}\n\n${bodyText}`;
     })
     .filter(Boolean);
 
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Skipped — a submission needs a PDF/PPTX/DOCX attachment or a Google Slides/Docs link. Plain emails and replies are ignored.",
+          "Skipped — a submission needs an attached file (PDF, PPTX, Word, image, spreadsheet) or a Google Slides/Docs link. Plain emails and replies are ignored.",
         skipped: true,
       },
       { status: 400 },
@@ -135,9 +139,7 @@ export async function POST(request: Request) {
     .join("\n")
     .slice(0, 90000);
 
-  const enriched = await enrichSubmission(raw, {
-    fromName: fromName || undefined,
-  });
+  const enriched = await enrichSubmission(raw);
 
   const title =
     enriched.title && !enriched.title.toLowerCase().includes("review needed")
@@ -165,7 +167,6 @@ export async function POST(request: Request) {
     content: enriched.content,
     subjectSlug: enriched.subjectSlug,
     topics,
-    authorName: enriched.authorName || fromName || "Student contributor",
     language: "en",
     // Hard rule: email ingest never publishes
     status: "draft",
@@ -201,7 +202,15 @@ export async function GET() {
   return NextResponse.json({
     service: "Project STEAM email ingest",
     publishes: false,
-    supports: ["email body", "pdf", "pptx", "docx", "google slides/docs links"],
+    supports: [
+      "email body",
+      "pdf",
+      "pptx",
+      "docx",
+      "images (png/jpg/gif/webp)",
+      "spreadsheets",
+      "google slides/docs links",
+    ],
     requires: ["INGEST_SECRET", "Supabase"],
     docs: "gmail/README.md",
   });

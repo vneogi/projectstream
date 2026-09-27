@@ -22,8 +22,6 @@ export async function PUT(
     content: body.content,
     subjectSlug: body.subjectSlug,
     topics: body.topics,
-    authorName: body.authorName,
-    authorSchool: body.authorSchool,
     language: body.language,
     status: body.status as PostStatus,
   });

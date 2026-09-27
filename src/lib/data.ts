@@ -98,8 +98,6 @@ export interface CreatePostInput {
   content: string;
   subjectSlug: string;
   topics: string[];
-  authorName: string;
-  authorSchool?: string;
   language: string;
   status: PostStatus;
   sourceMessageId?: string;
@@ -157,8 +155,8 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
     subject_slug: subject.slug,
     subject_name: subject.name,
     topics: input.topics,
-    author_name: input.authorName,
-    author_school: input.authorSchool ?? null,
+    author_name: null,
+    author_school: null,
     language: input.language,
     status: input.status,
     source_message_id: input.sourceMessageId ?? null,
@@ -175,6 +173,7 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
     return {
       id: crypto.randomUUID(),
       ...input,
+      authorName: "",
       subjectId: subject.id,
       subjectName: subject.name,
       createdAt: now,
@@ -207,10 +206,18 @@ export async function updatePost(
   if (input.abstract !== undefined) updates.abstract = input.abstract;
   if (input.content) updates.content = input.content;
   if (input.topics) updates.topics = input.topics;
-  if (input.authorName) updates.author_name = input.authorName;
-  if (input.authorSchool !== undefined) updates.author_school = input.authorSchool;
   if (input.language) updates.language = input.language;
   if (input.status) updates.status = input.status;
+  if (
+    input.title ||
+    input.content ||
+    input.status ||
+    input.excerpt ||
+    input.subjectSlug
+  ) {
+    updates.author_name = null;
+    updates.author_school = null;
+  }
   if (input.filePath !== undefined) updates.file_path = input.filePath;
   if (input.fileName !== undefined) updates.file_name = input.fileName;
   if (input.fileMime !== undefined) updates.file_mime = input.fileMime;

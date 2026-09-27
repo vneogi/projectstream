@@ -29,8 +29,6 @@ export function PostForm({
     post?.subjectSlug ?? subjects[0]?.slug ?? "",
   );
   const [topics, setTopics] = useState(post?.topics.join(", ") ?? "");
-  const [authorName, setAuthorName] = useState(post?.authorName ?? "");
-  const [authorSchool, setAuthorSchool] = useState(post?.authorSchool ?? "");
   const [status, setStatus] = useState<PostStatus>(post?.status ?? "draft");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -54,7 +52,6 @@ export function PostForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content,
-          fromName: authorName || undefined,
           subjectHint: subjectSlug || undefined,
         }),
       });
@@ -69,7 +66,6 @@ export function PostForm({
       if (Array.isArray(data.topics) && data.topics.length > 0) {
         setTopics(data.topics.join(", "));
       }
-      if (data.authorName) setAuthorName(data.authorName);
 
       if (data.warning) {
         setWarning(data.warning);
@@ -101,8 +97,6 @@ export function PostForm({
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-      authorName,
-      authorSchool: authorSchool || undefined,
       language: "en",
       status,
     };
@@ -134,7 +128,7 @@ export function PostForm({
         </label>
         <p className="field__hint">
           Separate paragraphs with a blank line. Then use Auto-fill to generate
-          the author, subject, topics, summary, and abstract.
+          the subject, topics, summary, and abstract.
         </p>
         <textarea
           id="content"
@@ -155,7 +149,7 @@ export function PostForm({
         >
           {enriching
             ? "Reading the notes…"
-            : "Auto-fill author, subject, topics, summary & abstract"}
+            : "Auto-fill subject, topics, summary & abstract"}
           <Icon name="sparkles" />
         </button>
       </div>
@@ -266,30 +260,6 @@ export function PostForm({
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>
-        </div>
-        <div className="field">
-          <label className="field__label" htmlFor="author">
-            Author name
-          </label>
-          <input
-            id="author"
-            className="input"
-            value={authorName}
-            onChange={(e) => setAuthorName(e.target.value)}
-            required
-          />
-        </div>
-        <div className="field">
-          <label className="field__label" htmlFor="school">
-            School or class
-          </label>
-          <input
-            id="school"
-            className="input"
-            value={authorSchool}
-            onChange={(e) => setAuthorSchool(e.target.value)}
-          />
-          <p className="field__hint">Optional.</p>
         </div>
       </div>
 

@@ -5,12 +5,12 @@ import {
   updatePost,
 } from "@/lib/data";
 import { verifyIngestSecret } from "@/lib/security";
-import { getSupabaseAdmin, MATERIALS_BUCKET } from "@/lib/supabase/admin";
+import { isAllowedMaterial } from "@/lib/file-types";
 
 export const runtime = "nodejs";
 
 /**
- * Gmail Apps Script uploads original PDF/PPTX here (draft-only posts).
+ * Gmail Apps Script uploads original study files here (draft-only posts).
  * Auth: Authorization: Bearer <INGEST_SECRET>
  *
  * Form fields:
@@ -44,13 +44,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
 
+  if (!isAllowedMaterial(file.name, file.type)) {
+    return NextResponse.json(
+      {
+        error:
+          "Unsupported file type. Attach PDF, Word, slides, spreadsheet, or an image (PNG/JPG/GIF/WebP).",
+      },
+      { status: 415 },
+    );
+  }
+
   // Vercel body limit ~4.5MB — keep a margin
   const maxBytes = 3.5 * 1024 * 1024;
   if (file.size > maxBytes) {
     return NextResponse.json(
       {
         error:
-          "File too large for automatic upload (>3.5MB). Compress the PDF or upload manually in Admin.",
+          "File too large for automatic upload (>3.5MB). Compress the file or upload a smaller copy.",
         maxBytes,
       },
       { status: 413 },
