@@ -18,6 +18,9 @@ describe("seed subjects", () => {
       "mathematics",
       "computer-science",
       "engineering",
+      "psychology",
+      "design",
+      "other",
       "general-stem",
     ]) {
       assert.ok(slugs.includes(expected), `missing subject ${expected}`);

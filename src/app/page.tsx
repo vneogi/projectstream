@@ -6,6 +6,9 @@ import { SubjectCard } from "@/components/SubjectCard";
 import { listPublishedPosts, listSubjects } from "@/lib/data";
 import { siteCopy } from "@/lib/site";
 
+// Homepage subjects and recent articles update as soon as Admin publishes.
+export const dynamic = "force-dynamic";
+
 const steps = [
   {
     icon: "send" as const,

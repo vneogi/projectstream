@@ -1434,6 +1434,50 @@ a.tag:hover {
   background: var(--primary-softer);
 }
 
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 20px;
+}
+
+.admin-filters .field {
+  min-width: min(100%, 240px);
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  white-space: nowrap;
+}
+
+.button-link {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button-link:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.button-link--danger {
+  color: #b91c1c;
+}
+
+.button-link--danger:hover:not(:disabled) {
+  color: #7f1d1d;
+}
+
 .status {
   display: inline-flex;
   align-items: center;

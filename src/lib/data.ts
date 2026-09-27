@@ -5,7 +5,10 @@ import {
   getSubjectBySlug,
   subjects,
 } from "./seed-data";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  getSupabaseAdmin,
+  MATERIALS_BUCKET,
+} from "@/lib/supabase/admin";
 import { rankPostsForQuery } from "./library-search";
 import { mapPostRow } from "./map-post";
 
@@ -237,6 +240,17 @@ export async function deletePost(id: string): Promise<boolean> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return false;
 
+  const post = await getPostById(id);
+  if (post?.filePath) {
+    const { error: storageError } = await supabase.storage
+      .from(MATERIALS_BUCKET)
+      .remove([post.filePath]);
+    if (storageError) {
+      console.error("deletePost file cleanup failed", storageError.message);
+    }
+  }
+
   const { error } = await supabase.from("posts").delete().eq("id", id);
+  if (error) console.error("deletePost failed", error.message);
   return !error;
 }

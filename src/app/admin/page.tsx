@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminPostTable } from "@/components/AdminPostTable";
 import { Icon } from "@/components/Icon";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { hasDatabase, listAllPosts } from "@/lib/data";
@@ -64,63 +65,13 @@ export default async function AdminPage() {
           </div>
         )}
 
-        <div className="table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Subject</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ color: "var(--text-muted)" }}>
-                    No posts yet. Create one manually or wait for Gmail ingest.
-                  </td>
-                </tr>
-              ) : (
-                posts.map((post) => (
-                  <tr key={post.id}>
-                    <td style={{ fontWeight: 600 }}>{post.title}</td>
-                    <td style={{ color: "var(--text-muted)" }}>
-                      {post.subjectName}
-                    </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}>
-                      {post.sourceMessageId ? (
-                        <span title={post.sourceFrom}>From email</span>
-                      ) : (
-                        "Manual"
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        className={
-                          post.status === "published"
-                            ? "status status--published"
-                            : "status status--draft"
-                        }
-                      >
-                        {post.status}
-                      </span>
-                    </td>
-                    <td>
-                      <Link
-                        href={`/admin/posts/${post.id}/edit`}
-                        className="link-arrow"
-                      >
-                        Edit
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {posts.length === 0 ? (
+          <div className="empty-state">
+            <p>No posts yet. Create one manually or wait for Gmail ingest.</p>
+          </div>
+        ) : (
+          <AdminPostTable posts={posts} />
+        )}
 
         <form action="/api/admin/logout" method="POST" style={{ marginTop: "32px" }}>
           <button type="submit" className="btn btn--secondary btn--sm">

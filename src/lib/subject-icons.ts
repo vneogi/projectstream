@@ -7,6 +7,9 @@ const icons: Record<string, IconName> = {
   mathematics: "sigma",
   "computer-science": "code",
   engineering: "cog",
+  psychology: "users",
+  design: "sparkles",
+  other: "book",
   "general-stem": "compass",
 };
 

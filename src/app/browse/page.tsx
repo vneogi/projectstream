@@ -6,6 +6,9 @@ export const metadata = {
   title: "Browse",
 };
 
+// Published articles change from Admin without a redeploy.
+export const dynamic = "force-dynamic";
+
 export default async function BrowsePage() {
   const subjects = await listSubjects();
   const posts = await listPublishedPosts();

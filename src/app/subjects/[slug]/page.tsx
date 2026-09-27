@@ -5,6 +5,9 @@ import { PostCard } from "@/components/PostCard";
 import { getPostsBySubject, listSubjects } from "@/lib/data";
 import { subjectIcon } from "@/lib/subject-icons";
 
+// Subject pages must reflect Admin publishing immediately.
+export const dynamic = "force-dynamic";
+
 export async function generateStaticParams() {
   const subjects = await listSubjects();
   return subjects.map((s) => ({ slug: s.slug }));

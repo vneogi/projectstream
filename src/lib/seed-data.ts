@@ -45,6 +45,27 @@ export const subjects: Subject[] = [
     color: "#b45309",
   },
   {
+    id: "psychology",
+    name: "Psychology",
+    slug: "psychology",
+    description: "Mind, behavior, learning, memory, and emotional wellbeing.",
+    color: "#be185d",
+  },
+  {
+    id: "design",
+    name: "Design",
+    slug: "design",
+    description: "Creative problem-solving, visual communication, and making ideas useful.",
+    color: "#9333ea",
+  },
+  {
+    id: "other",
+    name: "Other",
+    slug: "other",
+    description: "Educational ideas and projects that cross or extend beyond our main subjects.",
+    color: "#64748b",
+  },
+  {
     id: "general-stem",
     name: "General STEM",
     slug: "general-stem",
