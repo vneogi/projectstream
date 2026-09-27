@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Icon } from "./Icon";
 import { subjectIcon } from "@/lib/subject-icons";
 import { downloadLabel } from "@/lib/file-types";
+import type { Post } from "@/lib/types";
 
 export function PostCard({ post }: { post: Post }) {
   return (
