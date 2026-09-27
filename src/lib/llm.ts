@@ -19,9 +19,11 @@ export type LlmOutcome =
  */
 const GROQ_MODELS = [
   process.env.GROQ_MODEL,
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
+  // Llama 3.x IDs are enterprise-only on Groq as of 2026; developer keys use GPT-OSS.
   "openai/gpt-oss-20b",
+  "openai/gpt-oss-120b",
+  "llama-3.1-8b-instant",
+  "llama-3.3-70b-versatile",
 ].filter(Boolean) as string[];
 
 const OPENAI_MODELS = [
@@ -47,32 +49,59 @@ async function callProvider(
 
   for (const model of provider.models) {
     try {
-      const res = await fetch(provider.url, {
+      const payload = {
+        model,
+        temperature,
+        max_tokens: maxTokens,
+        messages,
+      };
+      let res = await fetch(provider.url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${provider.key}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model,
-          temperature,
-          max_tokens: maxTokens,
-          messages,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const detail = await res.text().catch(() => "");
-        errors.push(
-          `${provider.name}/${model}: HTTP ${res.status} ${detail.slice(0, 200)}`,
-        );
-        // 401/403 mean the key itself is bad, so other models will fail too.
-        if (res.status === 401 || res.status === 403) break;
-        continue;
+        const needsCompletionTokens =
+          res.status === 400 &&
+          /max_tokens|max_completion_tokens/i.test(detail);
+
+        if (needsCompletionTokens) {
+          res = await fetch(provider.url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${provider.key}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model,
+              temperature,
+              max_completion_tokens: maxTokens,
+              messages,
+            }),
+          });
+        }
+
+        if (!res.ok) {
+          const retryDetail = needsCompletionTokens
+            ? await res.text().catch(() => detail)
+            : detail;
+          errors.push(
+            `${provider.name}/${model}: HTTP ${res.status} ${String(retryDetail).slice(0, 200)}`,
+          );
+          if (res.status === 401 || res.status === 403) break;
+          continue;
+        }
       }
 
       const data = await res.json();
-      const content = data.choices?.[0]?.message?.content?.trim();
+      const content = String(
+        data.choices?.[0]?.message?.content ?? "",
+      ).trim();
       if (content) return { content, provider: provider.name, model };
       errors.push(`${provider.name}/${model}: empty response`);
     } catch (err) {

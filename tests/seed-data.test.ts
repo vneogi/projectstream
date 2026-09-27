@@ -45,9 +45,9 @@ describe("seed posts + search", () => {
     assert.match(post.title, /night sky/i);
   });
 
-  it("searches by title keywords", () => {
-    const results = searchPosts("night sky");
-    assert.ok(results.some((p) => p.slug === "night-sky-winter"));
+  it("searches by a full student question, not only an exact phrase", () => {
+    const results = searchPosts("How do I balance chemical equations?");
+    assert.ok(results.some((p) => p.slug === "balance-equations-tips"));
   });
 
   it("searches by topic tags", () => {

@@ -1,4 +1,5 @@
 import type { Post, Subject } from "./types";
+import { rankPostsForQuery } from "./library-search";
 
 export const subjects: Subject[] = [
   {
@@ -161,20 +162,5 @@ export function getPostBySlug(slug: string): Post | undefined {
 }
 
 export function searchPosts(query: string): Post[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return getPublishedPosts();
-
-  return getPublishedPosts().filter((post) => {
-    const haystack = [
-      post.title,
-      post.excerpt,
-      post.content,
-      post.subjectName,
-      ...post.topics,
-      post.authorName,
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(q);
-  });
+  return rankPostsForQuery(getPublishedPosts(), query);
 }

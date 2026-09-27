@@ -71,9 +71,9 @@ describe(`live smoke @ ${BASE}`, () => {
     }
   });
 
-  it("Ask AI accepts a question and returns sources shape", async () => {
+  it("Ask AI accepts a natural-language question and returns sources", async () => {
     const { status, json } = await postJson("/api/ask", {
-      question: "What is photosynthesis?",
+      question: "How do I balance chemical equations?",
     });
     assert.equal(status, 200);
     const data = json as {

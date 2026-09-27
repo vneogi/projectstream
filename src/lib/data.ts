@@ -3,10 +3,10 @@ import {
   getPostBySlug,
   getPublishedPosts,
   getSubjectBySlug,
-  searchPosts,
   subjects,
 } from "./seed-data";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { rankPostsForQuery } from "./library-search";
 import { mapPostRow } from "./map-post";
 
 export function hasDatabase(): boolean {
@@ -83,23 +83,8 @@ export async function getPostsBySubject(subjectSlug: string): Promise<Post[]> {
 }
 
 export async function searchPublishedPosts(query: string): Promise<Post[]> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return searchPosts(query);
-
-  const q = query.trim();
-  if (!q) return await listPublishedPosts();
-
-  const { data, error } = await supabase
-    .from("posts")
-    .select("*")
-    .eq("status", "published")
-    .or(
-      `title.ilike.%${q}%,excerpt.ilike.%${q}%,content.ilike.%${q}%,subject_name.ilike.%${q}%`,
-    )
-    .order("created_at", { ascending: false });
-
-  if (error || !data) return searchPosts(query);
-  return data.map(mapPostRow);
+  const posts = await listPublishedPosts();
+  return rankPostsForQuery(posts, query);
 }
 
 export interface CreatePostInput {

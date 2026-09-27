@@ -89,9 +89,9 @@ export default function AskPage() {
               <Icon name="sparkles" />
               Answer
             </span>
-            <p className="prose" style={{ marginTop: "12px" }}>
+            <div className="prose" style={{ marginTop: "12px", whiteSpace: "pre-wrap" }}>
               {answer}
-            </p>
+            </div>
 
             {sources.length > 0 && (
               <div style={{ marginTop: "28px" }}>

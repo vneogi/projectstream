@@ -47,7 +47,9 @@ Ask AI already works once you add a key. **Recommended for a student project: Gr
 
 Same steps with `OPENAI_API_KEY` from [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
 
-The site prefers **Groq first**, then OpenAI. Without either key, Ask AI still returns a simple grounded summary from article excerpts (no generative model).
+The site prefers **Groq first**, then OpenAI. Groq’s current developer models are
+`openai/gpt-oss-20b` and `openai/gpt-oss-120b` (Llama 3.x IDs are enterprise-only).
+Without either key, Ask AI still returns a grounded summary from article excerpts.
 
 ---
 
