@@ -4,8 +4,9 @@ import {
   getPostById,
   updatePost,
 } from "@/lib/data";
-import { verifyIngestSecret } from "@/lib/security";
 import { isAllowedMaterial } from "@/lib/file-types";
+import { verifyIngestSecret } from "@/lib/security";
+import { getSupabaseAdmin, MATERIALS_BUCKET } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
