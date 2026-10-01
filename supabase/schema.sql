@@ -43,6 +43,25 @@ create index if not exists posts_status_idx on posts (status);
 create index if not exists posts_subject_slug_idx on posts (subject_slug);
 create index if not exists posts_created_at_idx on posts (created_at desc);
 
+alter table posts add column if not exists like_count integer not null default 0;
+
+create table if not exists post_likes (
+  post_id uuid not null references posts(id) on delete cascade,
+  user_id uuid not null,
+  created_at timestamptz not null default now(),
+  primary key (post_id, user_id)
+);
+
+create index if not exists post_likes_user_idx on post_likes (user_id);
+
+-- Browser clients use the public anon key (it is in the JS bundle).
+-- RLS with no policies + revoke means they cannot read drafts, emails, or likes.
+-- The Vercel server uses SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS.
+alter table posts enable row level security;
+alter table post_likes enable row level security;
+revoke all on table posts from anon, authenticated;
+revoke all on table post_likes from anon, authenticated;
+
 create index if not exists posts_search_idx on posts
   using gin (to_tsvector('english', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content,'')));
 
@@ -69,7 +88,7 @@ on conflict (slug) do nothing;
 -- Then run the policies below so only the service role
 -- (your server) can read/write. Students never get direct
 -- public URLs — downloads go through /api/download/[postId]
--- after Google/GitHub login.
+-- after Google login.
 -- ============================================================
 
 -- Optional: if you use SQL to create the bucket (Dashboard is easier):

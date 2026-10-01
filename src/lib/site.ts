@@ -28,7 +28,7 @@ export const siteCopy = {
     "If you have notes that helped you understand a hard topic, send them in. A clear explanation can change how another student sees a subject.",
   submitTitle: "Share your knowledge",
   submitLead:
-    "Email your notes, diagrams, experiments, or explanations. We read everything and publish what helps the community learn.",
+    "Email your notes as a PDF (or one PDF made from photos). Do not send only a link, and do not include your name, email, or phone in the article — we publish the text that arrives.",
   askTitle: "Ask Project STEAM",
   askLead:
     "Answers are built from published articles in our library, with the sources shown so you can read further.",

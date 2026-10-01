@@ -116,7 +116,11 @@ export default async function HomePage() {
                   <span className="art-card__label">Latest submissions</span>
                 </div>
                 {(recent.length > 0 ? recent : posts.slice(0, 3)).map((post) => (
-                  <div key={post.id} className="art-row">
+                  <Link
+                    key={post.id}
+                    href={`/posts/${post.slug}`}
+                    className="art-row"
+                  >
                     <span className="art-row__icon">
                       <Icon name="book" />
                     </span>
@@ -124,7 +128,7 @@ export default async function HomePage() {
                       <p className="art-row__title">{post.title}</p>
                       <p className="art-row__meta">{post.subjectName}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
               <span className="art-badge">

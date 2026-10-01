@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/Icon";
+import { LikeButton } from "@/components/LikeButton";
 import { MaterialAccess } from "@/components/MaterialAccess";
-import { getPost, listPublishedPosts } from "@/lib/data";
+import { getPost, getPostLikeState, listPublishedPosts } from "@/lib/data";
 import { getSessionUser } from "@/lib/supabase/server";
 
 export async function generateStaticParams() {
@@ -33,6 +34,7 @@ export default async function PostPage({
 
   const user = await getSessionUser();
   const isLoggedIn = Boolean(user);
+  const likeState = await getPostLikeState(post.id, user?.id);
   const paragraphs = post.content.split("\n\n").filter(Boolean);
   const abstractParagraphs = (post.abstract ?? "")
     .split("\n\n")
@@ -52,6 +54,12 @@ export default async function PostPage({
             <p className="article__lead">{post.excerpt}</p>
             <div className="meta-row">
               <span>{new Date(post.createdAt).toLocaleDateString("en-IN")}</span>
+              {post.likeCount > 0 ? (
+                <>
+                  <span>·</span>
+                  <span>{post.likeCount} likes</span>
+                </>
+              ) : null}
             </div>
             {post.topics.length > 0 && (
               <div className="tag-row" style={{ marginTop: "16px" }}>
@@ -84,6 +92,16 @@ export default async function PostPage({
             fileName={post.fileName}
             isLoggedIn={isLoggedIn}
           />
+
+          <div style={{ marginTop: "20px" }}>
+            <LikeButton
+              postId={post.id}
+              slug={post.slug}
+              initialCount={likeState.likeCount}
+              initialLiked={likeState.liked}
+              isLoggedIn={isLoggedIn}
+            />
+          </div>
 
           {isLoggedIn ? (
             <div className="prose" style={{ marginTop: "32px" }}>

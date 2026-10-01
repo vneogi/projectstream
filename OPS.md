@@ -116,3 +116,10 @@ Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 | “Write an email” opens the user’s mail app | Yes (`mailto:`) |
 | Gmail → website **draft** (Apps Script) | Ready — follow [`gmail/README.md`](./gmail/README.md) |
 | Auto-publish from email | **Never** — review required |
+
+---
+
+## 8) Google Analytics
+
+Set `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-XXXXXXXX`) in Vercel and redeploy. Setup steps are in [AUTH.md](./AUTH.md).
+

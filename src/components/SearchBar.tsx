@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./Icon";
+import { trackEvent } from "@/lib/analytics";
 
 export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
@@ -11,6 +12,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
+    if (q) trackEvent("search", { search_term: q.slice(0, 80) });
     router.push(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
   }
 

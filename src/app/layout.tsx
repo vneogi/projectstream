@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body>
+        <GoogleAnalytics />
         <a href="#main" className="skip-link">
           Skip to content
         </a>

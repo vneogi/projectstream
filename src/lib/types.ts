@@ -32,6 +32,8 @@ export interface Post {
   fileName?: string;
   fileMime?: string;
   fileSize?: number;
+  /** Students who marked the article helpful. Boosts search ranking. */
+  likeCount: number;
   createdAt: string;
   updatedAt: string;
 }

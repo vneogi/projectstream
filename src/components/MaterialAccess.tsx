@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { trackEvent } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 
 export function MaterialAccess({
@@ -64,7 +65,11 @@ export function MaterialAccess({
           : ". (No original file was attached for this article yet.)"}
       </p>
       {hasFile && (
-        <a href={`/api/download/${postId}`} className="btn btn--primary">
+        <a
+          href={`/api/download/${postId}`}
+          className="btn btn--primary"
+          onClick={() => trackEvent("file_download", { post_id: postId })}
+        >
           Download {fileName || "file"}
           <Icon name="arrow-right" />
         </a>

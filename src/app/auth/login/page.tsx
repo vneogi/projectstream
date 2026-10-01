@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { trackEvent } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
+import { safeInternalPath } from "@/lib/safe-path";
 
 // Inlined at build time by Next.js — a redeploy is required after changing them in Vercel.
 const hasUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
@@ -12,9 +14,9 @@ const hasAnonKey = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/";
+  const next = safeInternalPath(searchParams.get("next"));
   const error = searchParams.get("error");
-  const [loading, setLoading] = useState<"google" | "github" | null>(null);
+  const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState("");
 
   const missingVars = [
@@ -22,9 +24,10 @@ function LoginForm() {
     hasAnonKey ? null : "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   ].filter(Boolean) as string[];
 
-  async function signIn(provider: "google" | "github") {
-    setLoading(provider);
+  async function signIn() {
+    setLoading(true);
     setLocalError("");
+    trackEvent("sign_in_click", { provider: "google" });
     try {
       if (missingVars.length > 0) {
         throw new Error(
@@ -36,13 +39,13 @@ function LoginForm() {
       const supabase = createClient();
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: "google",
         options: { redirectTo },
       });
       if (oauthError) throw oauthError;
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : "Sign-in failed");
-      setLoading(null);
+      setLoading(false);
     }
   }
 
@@ -54,7 +57,7 @@ function LoginForm() {
         <h1 className="section__title">Sign in to download</h1>
         <p className="section__lead">
           Browse summaries, search, and Ask AI are free for everyone. Sign in
-          with Google to download original PDFs and read the full notes.
+          with Google to download original files and read the full notes.
         </p>
 
         <div className="panel form">
@@ -75,25 +78,17 @@ function LoginForm() {
           <button
             type="button"
             className="btn btn--primary btn--full"
-            disabled={loading !== null}
-            onClick={() => signIn("google")}
+            disabled={loading}
+            onClick={() => signIn()}
           >
-            {loading === "google" ? "Redirecting…" : "Continue with Google"}
+            {loading ? "Redirecting…" : "Continue with Google"}
             <Icon name="arrow-right" />
           </button>
 
-          <button
-            type="button"
-            className="btn btn--secondary btn--full"
-            disabled={loading !== null}
-            onClick={() => signIn("github")}
-          >
-            {loading === "github" ? "Redirecting…" : "Continue with GitHub"}
-          </button>
-
           <p className="field__hint" style={{ textAlign: "center" }}>
-            We only use your account to verify you are a real student user. We
-            do not post on your behalf.
+            Google is the sign-in we offer because almost every student already
+            has a Gmail or school Google account. We only use it to confirm you
+            are a real person. We do not post on your behalf.
           </p>
         </div>
 

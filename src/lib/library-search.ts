@@ -96,6 +96,10 @@ export function rankPostsForQuery(posts: Post[], query: string): Post[] {
       for (const token of tokens) {
         if (text.includes(token)) score += 1;
       }
+      // Likes only boost articles that already match the query, so a popular
+      // unrelated post cannot bury a keyword hit. log2 keeps one viral article
+      // from dominating forever (1 like ≈ +1, 7 ≈ +3, 31 ≈ +5).
+      if (score > 0) score += Math.log2(1 + (post.likeCount ?? 0));
       return { post, score };
     })
     .filter((row) => row.score > 0)

@@ -6,11 +6,12 @@ export const metadata = {
 };
 
 const guidelines = [
-  "Your name — or tell us you would rather stay anonymous",
-  "Class and school, if you want the credit",
-  "Subject and topic, for example Physics — optics",
-  "Short paragraphs, clear steps, and examples where you can",
-  "Only share work you wrote or have permission to share",
+  "Attach your notes as a file — PDF is best. Do not send only a Drive, WhatsApp, or website link; we often cannot open those.",
+  "If you took several photos, join them into one PDF before emailing (Preview on a Mac, Google Drive, or any free “images to PDF” tool).",
+  "Do not put your name, email, phone number, school ID, or home address in the notes or in the email body. That text can be published with the article.",
+  "Do not paste personal chat or file links inside the article.",
+  "Write in your own words. Only send work you created or have permission to share.",
+  "Short paragraphs, labelled diagrams, and a clear topic (for example Physics — optics) help other students find it.",
 ];
 
 export default function SubmitPage() {
@@ -47,7 +48,7 @@ export default function SubmitPage() {
         </div>
 
         <div className="panel panel--soft" style={{ marginTop: "24px" }}>
-          <h2 className="feature__title">What to include</h2>
+          <h2 className="feature__title">How to send your work</h2>
           <ul className="join__list" style={{ marginTop: "16px" }}>
             {guidelines.map((item) => (
               <li

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listPublishedPosts, searchPublishedPosts } from "@/lib/data";
+import { limitOrRespond } from "@/lib/http-limit";
 import { chatCompletionDetailed, llmConfigured } from "@/lib/llm";
 import type { Post } from "@/lib/types";
 
@@ -28,7 +29,16 @@ function fallbackAnswer(posts: Post[], usedLibraryFallback: boolean): string {
 }
 
 export async function POST(request: Request) {
-  const { question } = await request.json();
+  const limited = limitOrRespond(request, "ask", 20, 10 * 60 * 1000);
+  if (limited) return limited;
+
+  let question: unknown;
+  try {
+    const body = await request.json();
+    question = body.question;
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
   const q = String(question ?? "").trim();
 
   if (!q) {

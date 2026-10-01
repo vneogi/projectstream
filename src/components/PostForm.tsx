@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./Icon";
+import { isWeakExtractedContent } from "@/lib/extract-text";
 import type { Post, PostStatus, Subject } from "@/lib/types";
 
 function slugify(text: string): string {
@@ -35,6 +36,8 @@ export function PostForm({
   const [warning, setWarning] = useState("");
   const [loading, setLoading] = useState(false);
   const [enriching, setEnriching] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [fileLabel, setFileLabel] = useState(post?.fileName ?? "");
 
   function handleTitleChange(value: string) {
     setTitle(value);
@@ -78,6 +81,46 @@ export function PostForm({
       setError(err instanceof Error ? err.message : "Auto-fill failed");
     } finally {
       setEnriching(false);
+    }
+  }
+
+  async function handleMaterial(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!post) {
+      setError("Save this as a draft first, then come back to attach a file.");
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+    setNotice("");
+    setWarning("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/posts/${post.id}/material`, {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+
+      setFileLabel(data.fileName ?? file.name);
+      const extracted = String(data.extractedText ?? "").trim();
+      if (extracted.length >= 40) {
+        setContent((current) =>
+          !current.trim() || isWeakExtractedContent(current)
+            ? extracted
+            : `${current.trim()}\n\n${extracted}`,
+        );
+      }
+      setNotice(data.parseNote ?? "File attached.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -128,7 +171,9 @@ export function PostForm({
         </label>
         <p className="field__hint">
           Separate paragraphs with a blank line. Then use Auto-fill to generate
-          the subject, topics, summary, and abstract.
+          the subject, topics, summary, and abstract. For scanned PDFs or a
+          stack of photos, attach the file below — OCR from email may fill this,
+          or type a short overview and Auto-fill.
         </p>
         <textarea
           id="content"
@@ -138,6 +183,30 @@ export function PostForm({
           rows={12}
           required
         />
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="material">
+          Original file (PDF or images)
+        </label>
+        <p className="field__hint">
+          {post
+            ? "One file per article. Combine several photos into a single PDF, then upload. We attach it for student download and try to parse text."
+            : "Save the draft first, then edit it to attach a PDF or image."}
+        </p>
+        {fileLabel ? (
+          <p className="field__hint">Currently attached: {fileLabel}</p>
+        ) : null}
+        {post ? (
+          <input
+            id="material"
+            type="file"
+            disabled={uploading}
+            accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.ppt,.pptx,.txt,image/*"
+            onChange={handleMaterial}
+          />
+        ) : null}
+        {uploading ? <p className="field__hint">Uploading…</p> : null}
       </div>
 
       <div>

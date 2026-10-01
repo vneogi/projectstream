@@ -30,6 +30,12 @@ export function PostCard({ post }: { post: Post }) {
             <span>{downloadLabel(post.fileName)} · sign in to download</span>
           </>
         ) : null}
+        {post.likeCount > 0 ? (
+          <>
+            <span>·</span>
+            <span>{post.likeCount} likes</span>
+          </>
+        ) : null}
       </div>
     </Link>
   );

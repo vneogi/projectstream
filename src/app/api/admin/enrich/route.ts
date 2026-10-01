@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { enrichSubmission } from "@/lib/enrich";
+import { limitOrRespond } from "@/lib/http-limit";
 
 /**
  * Admin helper: turn raw student notes (from email) into title, author,
  * subject, topics, summary, and abstract — still requires human publish.
  */
 export async function POST(request: Request) {
+  const limited = limitOrRespond(request, "enrich", 20, 10 * 60 * 1000);
+  if (limited) return limited;
+
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

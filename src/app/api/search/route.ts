@@ -16,6 +16,7 @@ export async function GET(request: Request) {
       subjectSlug: p.subjectSlug,
       topics: p.topics,
       hasFile: Boolean(p.filePath),
+      likeCount: p.likeCount ?? 0,
       createdAt: p.createdAt,
     })),
     total: posts.length,

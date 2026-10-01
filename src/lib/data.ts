@@ -176,6 +176,7 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
       authorName: "",
       subjectId: subject.id,
       subjectName: subject.name,
+      likeCount: 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -260,4 +261,73 @@ export async function deletePost(id: string): Promise<boolean> {
   const { error } = await supabase.from("posts").delete().eq("id", id);
   if (error) console.error("deletePost failed", error.message);
   return !error;
+}
+
+export async function getPostLikeState(
+  postId: string,
+  userId?: string | null,
+): Promise<{ likeCount: number; liked: boolean }> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { likeCount: 0, liked: false };
+
+  const post = await getPostById(postId);
+  const likeCount = post?.likeCount ?? 0;
+  if (!userId) return { likeCount, liked: false };
+
+  const { data } = await supabase
+    .from("post_likes")
+    .select("post_id")
+    .eq("post_id", postId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return { likeCount, liked: Boolean(data) };
+}
+
+export async function togglePostLike(
+  postId: string,
+  userId: string,
+): Promise<{ liked: boolean; likeCount: number } | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const post = await getPostById(postId);
+  if (!post || post.status !== "published") return null;
+
+  const { data: existing } = await supabase
+    .from("post_likes")
+    .select("post_id")
+    .eq("post_id", postId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("post_likes")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", userId);
+  } else {
+    const { error } = await supabase.from("post_likes").insert({
+      post_id: postId,
+      user_id: userId,
+    });
+    if (error) {
+      console.error("togglePostLike insert failed", error.message);
+      return null;
+    }
+  }
+
+  const { count } = await supabase
+    .from("post_likes")
+    .select("*", { count: "exact", head: true })
+    .eq("post_id", postId);
+
+  const likeCount = count ?? 0;
+  await supabase
+    .from("posts")
+    .update({ like_count: likeCount, updated_at: new Date().toISOString() })
+    .eq("id", postId);
+
+  return { liked: !existing, likeCount };
 }

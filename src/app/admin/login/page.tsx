@@ -25,7 +25,10 @@ export default function AdminLoginPage() {
       router.push("/admin");
       router.refresh();
     } else {
-      setError("Incorrect password");
+      const data = await res.json().catch(() => ({}));
+      setError(
+        typeof data.error === "string" ? data.error : "Incorrect password",
+      );
       setLoading(false);
     }
   }

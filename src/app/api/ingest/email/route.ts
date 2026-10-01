@@ -5,6 +5,7 @@ import {
   hasDatabase,
 } from "@/lib/data";
 import { enrichSubmission } from "@/lib/enrich";
+import { limitOrRespond } from "@/lib/http-limit";
 import { slugify, verifyIngestSecret } from "@/lib/security";
 
 type IngestAttachment = {
@@ -25,6 +26,9 @@ type IngestAttachment = {
  * or header x-ingest-secret: <INGEST_SECRET>
  */
 export async function POST(request: Request) {
+  const limited = limitOrRespond(request, "ingest-email", 60, 10 * 60 * 1000);
+  if (limited) return limited;
+
   const auth =
     request.headers.get("authorization") ??
     request.headers.get("x-ingest-secret");

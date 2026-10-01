@@ -432,14 +432,24 @@ function extractLinkedDocs_(body) {
   return results;
 }
 
-/** PDF → temporary Google Doc → text → delete temp file */
+/** PDF → Google Doc. Image-only scans get a second pass with OCR. */
 function extractPdfText_(blob) {
+  var text = convertPdfToDocText_(blob, false);
+  if (cleanText_(text).length >= 80) return text;
+  var ocrText = convertPdfToDocText_(blob, true);
+  return cleanText_(ocrText).length >= cleanText_(text).length ? ocrText : text;
+}
+
+function convertPdfToDocText_(blob, useOcr) {
   assertDrive_();
   var resource = {
-    title: "steam-temp-pdf-" + Date.now(),
+    title: "steam-temp-pdf-" + Date.now() + (useOcr ? "-ocr" : ""),
     mimeType: MimeType.GOOGLE_DOCS,
   };
-  var file = Drive.Files.insert(resource, blob, { convert: true });
+  var options = useOcr
+    ? { convert: true, ocr: true, ocrLanguage: "en" }
+    : { convert: true };
+  var file = Drive.Files.insert(resource, blob, options);
   try {
     return DocumentApp.openById(file.id).getBody().getText();
   } finally {

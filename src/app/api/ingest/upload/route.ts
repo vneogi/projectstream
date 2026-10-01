@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import {
   findPostBySourceMessageId,
   getPostById,
-  updatePost,
 } from "@/lib/data";
 import { isAllowedMaterial } from "@/lib/file-types";
+import { limitOrRespond } from "@/lib/http-limit";
 import { verifyIngestSecret } from "@/lib/security";
-import { getSupabaseAdmin, MATERIALS_BUCKET } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { storePostMaterial } from "@/lib/store-material";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,9 @@ export const runtime = "nodejs";
  *  - postId: optional if messageId not used
  */
 export async function POST(request: Request) {
+  const limited = limitOrRespond(request, "ingest-upload", 60, 10 * 60 * 1000);
+  if (limited) return limited;
+
   const auth =
     request.headers.get("authorization") ??
     request.headers.get("x-ingest-secret");
@@ -28,8 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const admin = getSupabaseAdmin();
-  if (!admin) {
+  if (!getSupabaseAdmin()) {
     return NextResponse.json(
       { error: "Supabase is not configured" },
       { status: 503 },
@@ -82,40 +85,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
-  const path = `${post.id}/${Date.now()}-${safeName}`;
-
   const buffer = Buffer.from(await file.arrayBuffer());
-  const { error: uploadError } = await admin.storage
-    .from(MATERIALS_BUCKET)
-    .upload(path, buffer, {
-      contentType: file.type || "application/octet-stream",
-      upsert: true,
-    });
-
-  if (uploadError) {
-    console.error("upload failed", uploadError.message);
-    return NextResponse.json(
-      {
-        error:
-          "Storage upload failed. Create a private bucket named `materials` in Supabase Storage.",
-        detail: uploadError.message,
-      },
-      { status: 500 },
-    );
+  const stored = await storePostMaterial(post, file, buffer);
+  if (!stored.ok) {
+    return NextResponse.json({ error: stored.error }, { status: stored.status });
   }
 
-  const updated = await updatePost(post.id, {
-    filePath: path,
-    fileName: file.name,
-    fileMime: file.type || "application/octet-stream",
-    fileSize: file.size,
-  });
+  const updated = await getPostById(post.id);
 
   return NextResponse.json({
     ok: true,
     postId: post.id,
-    filePath: path,
+    filePath: stored.path,
     fileName: file.name,
     status: updated?.status ?? post.status,
     message: "File stored privately — download requires student login",

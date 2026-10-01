@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
+import { trackEvent } from "@/lib/analytics";
 import { siteCopy } from "@/lib/site";
 
 interface Source {
@@ -35,6 +36,7 @@ export default function AskPage() {
       if (!res.ok) throw new Error(data.error ?? "Request failed");
       setAnswer(data.answer);
       setSources(data.sources ?? []);
+      trackEvent("ask_ai", { question_length: question.trim().length });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

@@ -30,6 +30,12 @@ export function mapPostRow(row: Record<string, unknown>): Post {
         : row.file_size
           ? Number(row.file_size)
           : undefined,
+    likeCount:
+      typeof row.like_count === "number"
+        ? row.like_count
+        : row.like_count
+          ? Number(row.like_count)
+          : 0,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };

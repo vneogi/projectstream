@@ -69,7 +69,8 @@ Students will click **Continue with Google**. Google must trust your Supabase pr
 1. Left menu → **APIs & Services** → **OAuth consent screen**
 2. If asked for User Type, choose **External** → **Create**
 3. Fill:
-   - **App name:** `Project STEAM`
+   - **App name:** `The Steam Collective Project`  
+     (this is the friendly name on the Google permission screen. It does **not** hide `….supabase.co` on the first “Sign in to …” page — see **Fixing the supabase.co login text** below.)
    - **User support email:** your email
    - **Developer contact email:** your email
 4. Click **Save and Continue**
@@ -120,7 +121,7 @@ Keep this window open.
    - **Client Secret** from Google Cloud
 7. Click **Save**
 
-(Optional) You can also enable **GitHub** later the same way. Google alone is enough for Indian students.
+Leave **GitHub** off. Students in this audience almost all have Google; GitHub is for developers.
 
 ---
 
@@ -274,3 +275,214 @@ After this, when a student emails a PDF/PPTX:
 - [ ] Vercel env vars + **Redeploy**
 - [ ] Test Sign in with Google on the live site
 - [ ] Re-paste Apps Script + confirm `INGEST_SECRET` matches
+- [ ] Run likes SQL (`like_count` + `post_likes`)
+- [ ] Rename Google OAuth app to **The Steam Collective Project**
+- [ ] Add `NEXT_PUBLIC_GA_MEASUREMENT_ID` and redeploy
+
+---
+
+## Fixing the supabase.co login text
+
+Google’s first screen shows **Sign in to jhtwdlenesiwxmzbbkqd.supabase.co** because that host is the OAuth redirect (Supabase, not your website). Changing the button label in our code cannot hide it.
+
+Do this:
+
+1. Google Cloud → **APIs & Services** → **OAuth consent screen** → App name: **The Steam Collective Project**. The next screen (“Google wants to access…”) will use that name.
+2. To replace the `….supabase.co` host itself: Supabase **Custom Domain** (Pro) for Auth, e.g. `auth.steamco.in`, then update Google’s Authorized JavaScript origins and redirect URI to that host. Do this when you move the site to steamco.in.
+
+Yahoo and iCloud are not worth adding now. Yahoo is not a built-in Supabase provider. Apple (iCloud) needs a paid Apple Developer account and extra certificates. Microsoft/Outlook is optional later for school accounts. **Google is the right default for Indian Class 8–12 students.**
+
+---
+
+## Google Analytics (GA4) — detailed setup
+
+You do this once. The Measurement ID (`G-XXXXXXXX`) is what the website needs. Do **not** paste Google’s full tracking snippet into the project — the tag is already in the code.
+
+Use the same Google account you use for this project (for example `projectsteamcollective@gmail.com` or your own).
+
+### A. Create a GA4 property and web stream
+
+1. Open [https://analytics.google.com](https://analytics.google.com) and sign in.
+2. If Google asks you to **Start measuring** / create an account:
+   - **Account name:** `The Steam Collective` (this is just the billing/org folder in Google).
+   - Uncheck any extra Google ads sharing you do not want.
+   - Click **Next**.
+3. If you already have Analytics, skip to the gear: bottom-left **Admin**.
+4. In **Admin**, under **Property**, click **Create property** (or **Create** → **Property**).
+5. Fill:
+   - **Property name:** `The Steam Collective Project`
+   - **Reporting time zone:** `India` (`(GMT+05:30) Kolkata`) so daily reports match school hours
+   - **Currency:** `Indian Rupee (INR)` (only used if you ever track money; likes/visits do not)
+6. Click **Next**. Industry: **Education** (or Other). Business size: Small. Goals: tick **Examine user behavior** / **Measure conversions** if asked. Click **Create**.
+7. Choose a **platform:** click **Web** (globe), not iOS/Android.
+8. **Set up a data stream:**
+   - **Website URL:** `https://steamco.in`  
+     You can type this **now**, even before the domain is connected. It is a label. Tracking still works on `projectstream.vercel.app` as soon as the tag is live.
+   - **Stream name:** `Project STEAM website`
+   - Leave **Enhanced measurement** ON (scrolls, outbound clicks, site search if GA detects it).
+9. Click **Create stream**.
+10. The next screen shows **Web stream details**. Copy **Measurement ID**. It looks like:
+    ```text
+    G-ABC123XYZ
+    ```
+    Not the “Stream ID” (a long number). Not a Google Tag Manager `GTM-` id.
+
+    If you closed the panel: **Admin** → **Data streams** → click **Project STEAM website** → Measurement ID is at the top right.
+
+You do **not** need to “install the Google tag” in WordPress or paste HTML. Ignore those instructions.
+
+### B. Put the ID in Vercel (required, then redeploy)
+
+`NEXT_PUBLIC_…` values are baked in at **build** time. Saving the variable without a new deploy does nothing. The Analytics code must also be on `main` (ask to push if this change is not deployed yet).
+
+1. Open [https://vercel.com](https://vercel.com) → your **projectsteam** / **projectstream** project.
+2. **Settings** → **Environment Variables**.
+3. Click **Add New** (or **Add**).
+4. **Key:**
+   ```text
+   NEXT_PUBLIC_GA_MEASUREMENT_ID
+   ```
+5. **Value:** paste `G-ABC123XYZ` (your real ID, no quotes, no spaces).
+6. **Environments:** tick **Production**. Also tick **Preview** if you want analytics on preview deploys (optional; Production is enough).
+7. Save.
+8. **Deployments** → open the latest Production deployment → **⋯** → **Redeploy**.  
+   Confirm it rebuilds (not “use existing build cache” if Vercel offers a cache-only option — you need a fresh build so the ID is inlined).  
+   Or push a new commit to `main`.
+
+### C. Check that data is arriving
+
+1. Open the live site in a **new tab** (or incognito). Click Browse, run a Search, open Ask AI if you like.
+2. In Analytics: **Reports** → **Realtime** (left sidebar). Within about 30 seconds you should see **1 user** (you).
+3. If Realtime stays at 0:
+   - The ID is wrong, or you saved it but did not **redeploy**.
+   - Ad blockers / Safari “Prevent cross-site tracking” can hide your own visit. Try Chrome incognito with extensions off.
+   - View page source on the live site and search for `G-` — the Measurement ID should appear in a small script. If it is missing, the env var was not present at build time.
+
+### D. What you will see after a day or two
+
+| Analytics report | What it means for Project STEAM |
+|------------------|----------------------------------|
+| **Reports → Realtime** | Who is on the site right now |
+| **Reports → Engagement → Pages and screens** | Home, Browse, article URLs, `/search`, `/ask`, `/auth/login` |
+| **Reports → Engagement → Events** | Named actions (below) |
+| **Reports → User attributes → Country / City** | Where students visit from (India vs elsewhere) |
+| **Reports → Tech → Tech details** | Phone vs laptop, browser |
+
+Custom events the site sends (same names in **Events**):
+
+| Event name | When it fires |
+|------------|----------------|
+| `page_view` | Every page (automatic) |
+| `search` | Student submits the search box (`search_term` is stored) |
+| `ask_ai` | Student sends an Ask AI question |
+| `file_download` | Signed-in student clicks download |
+| `article_like` | Student clicks “This helped” |
+| `sign_in_click` | Student clicks Continue with Google |
+
+Standard reports can take **24–48 hours** to fill in. Realtime is immediate.
+
+### E. When steamco.in goes live
+
+Keep the **same** Measurement ID. Do not create a second property or you will split history in two.
+
+1. Analytics → **Admin** → **Data streams** → **Project STEAM website**.
+2. Click the pencil next to **Website URL** if you originally used the Vercel URL, and set `https://steamco.in`.
+3. Optional: **Configure tag settings** → **Show more** → **List unwanted referrals** if payment/auth domains ever pollute reports (usually not needed).
+
+Vercel does not need a new variable when the domain changes — only if you rotate the `G-` ID.
+
+### F. Privacy (short)
+
+- The tag uses `anonymize_ip`.
+- We do not send names or emails to Google Analytics.
+- Search terms can appear in the `search` event; they are study topics, not personal data.
+
+---
+
+## Helpful votes (likes)
+
+Run in the Supabase SQL editor (safe if you already ran `schema.sql`):
+
+```sql
+alter table posts add column if not exists like_count integer not null default 0;
+
+create table if not exists post_likes (
+  post_id uuid not null references posts(id) on delete cascade,
+  user_id uuid not null,
+  created_at timestamptz not null default now(),
+  primary key (post_id, user_id)
+);
+```
+
+Signed-in students can like an article. Search still requires a keyword match, then more-liked articles rank higher among those matches.
+
+---
+
+## Security checklist (you do these in dashboards)
+
+Code now: signed editor cookie, safe login redirects, rate limits, browser security headers, placeholder admin password blocked on Vercel, RLS documented in `schema.sql`.
+
+### 1. Strong `ADMIN_PASSWORD` in Vercel
+
+The live site **will refuse** the default `change-me-before-deploy`. After this deploy you must set a real password and log into `/admin` again (old editor cookies stop working).
+
+1. Open a terminal on your Mac:
+   ```bash
+   openssl rand -base64 24
+   ```
+   Copy the output (one line).
+2. [vercel.com](https://vercel.com) → Project STEAM → **Settings** → **Environment Variables**.
+3. Find `ADMIN_PASSWORD`. If it is missing or is `change-me-before-deploy`, **Edit** (or Add):
+   - Key: `ADMIN_PASSWORD`
+   - Value: the random string from step 1
+   - Environment: **Production** (and Preview if you use it)
+4. Save. **Deployments** → **⋯** → **Redeploy** the Production deployment (needed if the variable existed with the old value at last build; password is read at **runtime**, but redeploy is still safest).
+5. Open `https://YOUR-SITE/admin/login`, paste the new password, sign in.
+6. Store the password in a password manager. Do not put it in GitHub, email, or the public site.
+
+### 2. Confirm `INGEST_SECRET` is random and matches Apps Script
+
+1. If you never generated one:
+   ```bash
+   openssl rand -hex 32
+   ```
+2. Vercel → **Environment Variables** → `INGEST_SECRET` = that value, Production.
+3. Apps Script → **Project Settings** (gear) → **Script properties** → `INGEST_SECRET` must be **identical**.
+4. Redeploy Vercel if you changed the variable.
+
+### 3. Storage bucket is private
+
+1. [supabase.com/dashboard](https://supabase.com/dashboard) → your project → **Storage**.
+2. Open bucket **`materials`**.
+3. It must **not** be public. If you see Public: ON, turn it **OFF**.
+4. **Storage** → **Policies** for `materials`: there should be **no** policy that allows `anon` or `authenticated` to SELECT. Downloads go through the website after Google login.
+
+### 4. Turn off extra Auth sign-up methods
+
+1. Supabase → **Authentication** → **Providers**.
+2. **Google** stays **Enabled**.
+3. **Email** / **Email OTP**: disable if you are not using email+password (students should only see Google).
+4. **GitHub** and others: **Disabled**.
+
+### 5. Publish Google OAuth only when ready, with 2FA on your accounts
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → the OAuth project → **APIs & Services** → **OAuth consent screen**.
+2. While testing: **Testing** + test users only.
+3. Before every student: **Publish app** (external).
+4. Your Google, Vercel, and Supabase logins: turn on **2-Step Verification** (Google Account → Security).
+
+### 6. Who can open the dashboards
+
+1. Vercel → **Settings** → **Team** (or project access): only your account.
+2. Supabase → **Project Settings** → **Team**: only your account.
+3. Do not invite student Google accounts as **dashboard** users. Students only use **Sign in with Google** on the public site.
+
+### 7. After a suspected leak
+
+If `SUPABASE_SERVICE_ROLE_KEY` or `INGEST_SECRET` was pasted in chat or a screenshot:
+
+1. Supabase → **Project Settings** → **API** → **Reset** service role key (or generate a new secret as the UI allows) → update Vercel `SUPABASE_SERVICE_ROLE_KEY` → redeploy.
+2. Generate a new `INGEST_SECRET`, update Vercel + Apps Script.
+3. Generate a new `ADMIN_PASSWORD` as in step 1.
+
+

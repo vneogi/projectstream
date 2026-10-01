@@ -18,6 +18,7 @@ export type IconName =
   | "close"
   | "search"
   | "send"
+  | "heart"
   | "sigma"
   | "sparkles"
   | "tag"
@@ -79,6 +80,9 @@ const paths: Record<IconName, React.ReactNode> = {
     </>
   ),
   send: <path d="M4 12 20 4l-3.5 16-4.5-6-8-2Z" />,
+  heart: (
+    <path d="M19.5 12.6 12 20l-7.5-7.4a4.5 4.5 0 1 1 7.5-5.2 4.5 4.5 0 1 1 7.5 5.2Z" />
+  ),
   sigma: <path d="M18 4H6l7 8-7 8h12" />,
   sparkles: (
     <>

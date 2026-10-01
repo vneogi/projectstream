@@ -25,6 +25,7 @@ describe("mapPostRow", () => {
       file_name: "notes.pdf",
       file_mime: "application/pdf",
       file_size: 1024,
+      like_count: 12,
       created_at: "2026-01-01T00:00:00.000Z",
       updated_at: "2026-01-02T00:00:00.000Z",
     });
@@ -37,6 +38,7 @@ describe("mapPostRow", () => {
     assert.equal(post.fileSize, 1024);
     assert.equal(post.authorSchool, "Class 10");
     assert.equal(post.abstract, "A longer overview of the material.");
+    assert.equal(post.likeCount, 12);
   });
 
   it("handles missing optional file/source fields", () => {
@@ -60,6 +62,7 @@ describe("mapPostRow", () => {
     assert.equal(post.filePath, undefined);
     assert.equal(post.sourceMessageId, undefined);
     assert.equal(post.abstract, undefined);
+    assert.equal(post.likeCount, 0);
   });
 
   it("coerces string file_size to number", () => {
