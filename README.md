@@ -2,7 +2,8 @@
 
 A student passion-project website to publish STEM and educational content shared by hundreds of students — free for learners across India and the world.
 
-**Live:** [https://projectstream.vercel.app](https://projectstream.vercel.app)
+**Live:** [https://projectstream.vercel.app](https://projectstream.vercel.app)  
+**Custom domain (next):** `steamco.in` — cutover steps in [AUTH.md](./AUTH.md).
 
 See **[OPS.md](./OPS.md)** for day-to-day operations, **[AUTH.md](./AUTH.md)** for Google login + protected PDF downloads, and **[gmail/README.md](./gmail/README.md)** for Gmail → draft ingest.
 
@@ -75,13 +76,9 @@ ADMIN_PASSWORD=your-strong-password
 3. Add the env vars above
 4. Deploy — your site gets a `*.vercel.app` URL immediately
 
-### 3. Custom domain
+### 3. Custom domain (steamco.in)
 
-Buy a domain from **GoDaddy**, **Namecheap**, or **Cloudflare Registrar** (often cheapest).
-
-In Vercel: Project → Settings → Domains → add your domain and follow DNS instructions.
-
-Update `NEXT_PUBLIC_SITE_URL` to your domain.
+The domain is purchased. **Do not point DNS until** Editor login, Google login, and ingest work on the Vercel URL. Then follow the full checklist **Custom domain: steamco.in** in [AUTH.md](./AUTH.md): Vercel domain + GoDaddy DNS, `NEXT_PUBLIC_SITE_URL`, Supabase redirect URLs, Apps Script `WEBHOOK_URL`, keep GA ID `G-VJ57TFG135`.
 
 ### 4. Optional — smarter AI answers
 

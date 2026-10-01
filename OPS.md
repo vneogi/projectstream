@@ -121,5 +121,11 @@ Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 
 ## 8) Google Analytics
 
-Set `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-XXXXXXXX`) in Vercel and redeploy. Setup steps are in [AUTH.md](./AUTH.md).
+**On.** Measurement ID `G-VJ57TFG135` is in Vercel (`NEXT_PUBLIC_GA_MEASUREMENT_ID`). The live site loads `gtag/js?id=G-VJ57TFG135`. Full setup: [AUTH.md](./AUTH.md). Keep this ID when moving to steamco.in.
+
+---
+
+## 9) Next: smoke-test, then steamco.in
+
+Security **code** (signed admin cookie, RLS, rate limits) is deployed. Finish a smoke test on `projectstream.vercel.app`, then follow **Custom domain: steamco.in** in [AUTH.md](./AUTH.md). Do not change DNS first or Google login and Gmail ingest will miss the new host.
 

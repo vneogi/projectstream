@@ -268,16 +268,21 @@ After this, when a student emails a PDF/PPTX:
 
 ## Quick checklist (remaining)
 
-- [ ] Google Cloud project + OAuth consent screen + test users
-- [ ] OAuth Web client with Supabase redirect URI
-- [ ] Supabase Auth → Google enabled with Client ID/Secret
-- [ ] Supabase Site URL + `/auth/callback` redirect URLs
-- [ ] Vercel env vars + **Redeploy**
-- [ ] Test Sign in with Google on the live site
-- [ ] Re-paste Apps Script + confirm `INGEST_SECRET` matches
-- [ ] Run likes SQL (`like_count` + `post_likes`)
-- [ ] Rename Google OAuth app to **The Steam Collective Project**
-- [ ] Add `NEXT_PUBLIC_GA_MEASUREMENT_ID` and redeploy
+Launch on the current Vercel URL is complete except a **5-minute smoke test** (below), then **steamco.in**.
+
+- [x] Google Cloud project + OAuth consent screen + test users
+- [x] OAuth Web client with Supabase redirect URI
+- [x] Supabase Auth → Google enabled with Client ID/Secret
+- [x] Supabase Site URL + `/auth/callback` redirect URLs (Vercel host)
+- [x] Vercel env vars + **Redeploy**
+- [x] Test Sign in with Google on the live site
+- [x] Re-paste Apps Script + confirm `INGEST_SECRET` matches
+- [x] Run likes SQL (`like_count` + `post_likes`)
+- [x] RLS on `posts` and `post_likes`
+- [x] Rename Google OAuth app to **The Steam Collective Project**
+- [x] Add `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-VJ57TFG135`) and redeploy
+- [ ] Smoke-test Editor login + a student Google login + one like (after signed-cookie deploy)
+- [ ] Point **steamco.in** at Vercel (see **Custom domain: steamco.in** below)
 
 ---
 
@@ -295,6 +300,8 @@ Yahoo and iCloud are not worth adding now. Yahoo is not a built-in Supabase prov
 ---
 
 ## Google Analytics (GA4) — detailed setup
+
+**Live (Oct 2026):** Measurement ID `G-VJ57TFG135` is set in Vercel as `NEXT_PUBLIC_GA_MEASUREMENT_ID`. The homepage includes `gtag/js?id=G-VJ57TFG135`. Check **Reports → Realtime** after a visit. Do **not** create a second GA4 property for steamco.in — keep this ID.
 
 You do this once. The Measurement ID (`G-XXXXXXXX`) is what the website needs. Do **not** paste Google’s full tracking snippet into the project — the tag is already in the code.
 
@@ -484,5 +491,85 @@ If `SUPABASE_SERVICE_ROLE_KEY` or `INGEST_SECRET` was pasted in chat or a screen
 1. Supabase → **Project Settings** → **API** → **Reset** service role key (or generate a new secret as the UI allows) → update Vercel `SUPABASE_SERVICE_ROLE_KEY` → redeploy.
 2. Generate a new `INGEST_SECRET`, update Vercel + Apps Script.
 3. Generate a new `ADMIN_PASSWORD` as in step 1.
+
+---
+
+## What to do first: security smoke test, then steamco.in
+
+Do **not** switch DNS first. Login, downloads, and email ingest all have **hostnames baked in** (Supabase redirect URLs, Google OAuth, Apps Script `WEBHOOK_URL`, `NEXT_PUBLIC_SITE_URL`). If those still say `projectstream.vercel.app` while students open `steamco.in`, Google sign-in and ingest will fail on the new domain while the old URL still works.
+
+**Order:**
+
+1. **10-minute smoke test on the current Vercel site** (security + features).
+2. **Then** add steamco.in in Vercel and update every callback in one sitting (checklist below). Keep `projectstream.vercel.app` as a backup until steamco.in login works.
+
+### Smoke test (do this now)
+
+Use [https://projectstream.vercel.app](https://projectstream.vercel.app):
+
+1. `/admin/login` — sign in with the **new** `ADMIN_PASSWORD`. (Old editor cookies were invalidated.)
+2. Open a draft → confirm file upload still works.
+3. Student **Continue with Google** → download a PDF.
+4. Click **This helped** on an article (requires Google sign-in).
+5. Analytics → **Realtime** — you should appear after browsing.
+
+If any of those fail, fix them **before** pointing the domain.
+
+### Custom domain: steamco.in
+
+Do these in order. Tick as you go.
+
+**A. Vercel**
+
+1. Project → **Settings** → **Domains** → Add `steamco.in` and `www.steamco.in` if you want www.
+2. Vercel shows DNS records (usually A for `@` and CNAME for `www`).
+
+**B. GoDaddy DNS** (domain registrar)
+
+1. GoDaddy → **My Products** → **steamco.in** → **DNS**.
+2. Add the records Vercel listed. Remove conflicting A/CNAME records for `@` / `www` that still point at GoDaddy parking or a builder.
+3. Wait until Vercel shows the domain **Valid**. TLS is automatic.
+
+**C. Vercel env + redeploy**
+
+1. Set `NEXT_PUBLIC_SITE_URL` = `https://steamco.in` (Production).
+2. **Redeploy** Production (needed because `NEXT_PUBLIC_*` is baked at build time).
+3. Do **not** change `NEXT_PUBLIC_GA_MEASUREMENT_ID` — keep `G-VJ57TFG135`.
+
+**D. Supabase Auth URLs**
+
+1. **Authentication** → **URL Configuration**.
+2. **Site URL:** `https://steamco.in`
+3. **Redirect URLs** — add (keep the Vercel ones until you retire that hostname):
+   ```text
+   https://steamco.in/auth/callback
+   https://www.steamco.in/auth/callback
+   https://projectstream.vercel.app/auth/callback
+   ```
+
+**E. Google Cloud OAuth client** (same client as today)
+
+1. **APIs & Services** → **Credentials** → your Web client.
+2. **Authorized JavaScript origins** — keep `https://YOUR_PROJECT.supabase.co`. Add nothing for steamco.in unless you later buy a Supabase custom auth domain.
+3. **Authorized redirect URIs** — must stay  
+   `https://YOUR_PROJECT.supabase.co/auth/v1/callback`  
+   Students will still see `….supabase.co` on the first Google screen until a Supabase custom auth domain (paid) is added. The **consent app name** is already The Steam Collective Project.
+
+**F. Apps Script**
+
+1. Script properties → `WEBHOOK_URL` = `https://steamco.in/api/ingest/email`  
+   (same `INGEST_SECRET`).
+2. Run `testWebhookOnly` or wait for the inbox trigger. Confirm a draft in `/admin`.
+
+**G. Analytics stream label**
+
+Admin → Data streams → Website URL `https://steamco.in`. Same `G-` ID.
+
+**H. Tell people the new URL only after**
+
+- `https://steamco.in` loads
+- Google login returns to steamco.in
+- A test email still creates a draft
+
 
 
