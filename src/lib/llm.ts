@@ -19,12 +19,23 @@ export type LlmOutcome =
  */
 const GROQ_MODELS = [
   process.env.GROQ_MODEL,
-  // Llama 3.x IDs are enterprise-only on Groq as of 2026; developer keys use GPT-OSS.
+  // Llama 3.x IDs are enterprise-only on Groq developer keys.
   "openai/gpt-oss-20b",
   "openai/gpt-oss-120b",
-  "llama-3.1-8b-instant",
-  "llama-3.3-70b-versatile",
 ].filter(Boolean) as string[];
+
+function clipMessages(messages: ChatMessage[], maxChars: number): ChatMessage[] {
+  return messages.map((message, index) => {
+    if (index !== messages.length - 1) return message;
+    if (message.content.length <= maxChars) return message;
+    return {
+      ...message,
+      content:
+        message.content.slice(0, maxChars) +
+        "\n\n[Truncated so the request fits the model limit.]",
+    };
+  });
+}
 
 const OPENAI_MODELS = [
   process.env.OPENAI_MODEL,
@@ -69,6 +80,9 @@ async function callProvider(
         const needsCompletionTokens =
           res.status === 400 &&
           /max_tokens|max_completion_tokens/i.test(detail);
+        const tooLarge =
+          res.status === 413 ||
+          /tokens per minute|request too large/i.test(detail);
 
         if (needsCompletionTokens) {
           res = await fetch(provider.url, {
@@ -84,16 +98,33 @@ async function callProvider(
               messages,
             }),
           });
+        } else if (tooLarge) {
+          res = await fetch(provider.url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${provider.key}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model,
+              temperature,
+              max_tokens: Math.min(700, maxTokens),
+              messages: clipMessages(messages, 4500),
+            }),
+          });
         }
 
         if (!res.ok) {
-          const retryDetail = needsCompletionTokens
-            ? await res.text().catch(() => detail)
-            : detail;
+          const retryDetail =
+            needsCompletionTokens || tooLarge
+              ? await res.text().catch(() => detail)
+              : detail;
           errors.push(
             `${provider.name}/${model}: HTTP ${res.status} ${String(retryDetail).slice(0, 200)}`,
           );
           if (res.status === 401 || res.status === 403) break;
+          // Org TPM is shared — a larger sibling model will fail the same way.
+          if (tooLarge && provider.name === "groq") break;
           continue;
         }
       }

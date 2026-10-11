@@ -90,16 +90,15 @@ Return ONLY valid JSON with these keys:
 - topics: array of 2–5 short lowercase topic tags
 - excerpt: 2–3 line summary for cards and search (max 240 chars)
 - abstract: a 10–20 line overview a student can read before downloading. Cover what the material teaches, the key ideas, and who it helps. Use short paragraphs separated by blank lines.
-- content: cleaned full notes, keep facts, short paragraphs separated by blank lines
 
-Do not invent facts. Do not wrap JSON in markdown fences.`,
+Keep the original notes as-is. Do not invent facts. Do not wrap JSON in markdown fences.`,
       },
       {
         role: "user",
-        content: `Raw submission:\n\n${text.slice(0, 12000)}`,
+        content: `Raw submission:\n\n${text.slice(0, 5000)}`,
       },
     ],
-    { temperature: 0.2, maxTokens: 2200 },
+    { temperature: 0.2, maxTokens: 900 },
   );
 
   if (!outcome.ok) {
@@ -139,7 +138,7 @@ Do not invent facts. Do not wrap JSON in markdown fences.`,
         String(parsed.authorName ?? "").trim() ||
         options?.fromName ||
         "Student contributor",
-      content: String(parsed.content ?? text).trim(),
+      content: text.trim(),
       provider: outcome.provider,
       model: outcome.model,
     };

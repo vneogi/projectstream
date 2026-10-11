@@ -134,6 +134,38 @@ describe("chatCompletion", () => {
     }
   });
 
+  it("retries a too-large Groq request with a shorter prompt", async () => {
+    process.env.GROQ_API_KEY = "groq-key";
+    const bodies: string[] = [];
+
+    mock.method(globalThis, "fetch", async (_url: string | URL, init?: RequestInit) => {
+      bodies.push(String(init?.body ?? ""));
+      if (bodies.length === 1) {
+        return {
+          ok: false,
+          status: 413,
+          text: async () =>
+            "Request too large for model tokens per minute (TPM): Limit 8000, Requested 12396",
+          json: async () => ({}),
+        };
+      }
+      return {
+        ok: true,
+        text: async () => "",
+        json: async () => ({
+          choices: [{ message: { content: "Short enough" } }],
+        }),
+      };
+    });
+
+    const result = await chatCompletion([
+      { role: "user", content: "x".repeat(8000) },
+    ]);
+    assert.equal(result?.content, "Short enough");
+    assert.equal(bodies.length, 2);
+    assert.match(bodies[1], /Truncated so the request fits/);
+  });
+
   it("stops trying more models when the key is rejected", async () => {
     process.env.GROQ_API_KEY = "bad-key";
     let calls = 0;
