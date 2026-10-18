@@ -1,6 +1,7 @@
 # Operations guide — Project STEAM
 
 Quick answers for running [projectstream.vercel.app](https://projectstream.vercel.app).
+For the current launch checklist, see [STATUS.md](./STATUS.md).
 
 ---
 
@@ -47,15 +48,25 @@ Ask AI already works once you add a key. **Recommended for a student project: Gr
 
 Same steps with `OPENAI_API_KEY` from [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
 
-The site prefers **Groq first**, then OpenAI. Groq’s current developer models are
-`openai/gpt-oss-20b` and `openai/gpt-oss-120b` (Llama 3.x IDs are enterprise-only).
-Without either key, Ask AI still returns a grounded summary from article excerpts.
+The site prefers **Groq first**, then OpenAI. The normal model is
+`openai/gpt-oss-20b`; `openai/gpt-oss-120b` is a fallback. Llama 3.x IDs are no
+longer used on developer keys.
+
+Auto-fill sends a capped extract of long notes and requests only generated
+metadata, keeping the request below Groq's 8,000 TPM developer limit. Full notes
+remain unchanged in the Editor. If `OPENAI_API_KEY` contains a Groq `gsk_…` key,
+remove it—OpenAI keys use their own provider format and are optional here.
+
+Without either provider key, Ask AI still returns a grounded summary from
+article excerpts and Auto-fill uses a simple text fallback.
 
 ---
 
 ## 3) Pull documents from `projectsteamcollective@gmail.com`
 
-**Wired as draft-only ingest.** Supports **PDF, PPTX, and Google Slides links** (text extraction in Apps Script). Full steps: [`gmail/README.md`](./gmail/README.md)
+**Live and draft-only.** Supports PDF (including Drive OCR for scans), PowerPoint,
+Word, images, spreadsheets, and Google Slides/Docs links. Full steps:
+[`gmail/README.md`](./gmail/README.md)
 
 ```text
 Gmail → Apps Script → POST /api/ingest/email → Supabase draft → you publish in /admin
@@ -85,24 +96,25 @@ Site brand is **Project STEAM** (STEAM in all caps).
 | Homepage headlines, hero, join CTA | `src/lib/site.ts` → `siteCopy` |
 | Site name, description, submit email | `src/lib/site.ts` → `siteConfig` |
 | About page paragraphs | `src/app/about/page.tsx` |
-| Demo articles (until Supabase) | `src/lib/seed-data.ts` |
-| Real published articles | `/admin` on the live site (needs Supabase for persistence) |
+| Local/demo fallback articles | `src/lib/seed-data.ts` |
+| Production drafts and published articles | `/admin` on the live site |
 
 Workflow: edit file → commit → push to GitHub → Vercel redeploys in ~1 minute.
-
-**Important:** Without Supabase, posts created in `/admin` may not persist across redeploys. Connect Supabase (see README) for a real library.
 
 ---
 
 ## 6) Auto-categorize + summary
 
-Built into Admin → **New article**:
+Built into Admin → **New/Edit article**:
 
-1. Paste email body into **Content**
-2. Click **Auto-fill title, summary & subject**
-3. Review → set status to **Published** → save
+1. Paste notes into **Content**, or open an ingested draft
+2. Optionally upload/replace the original source file
+3. Click **Auto-fill subject, topics, summary & abstract**
+4. Review → set status to **Published** → save
 
-The **summary (`excerpt`)** shows on cards and is fed into Ask AI grounding.
+Auto-fill reads a capped extract so long OCR documents fit Groq's token limit.
+It does not replace the full Content field. The summary (`excerpt`) shows on
+cards and is fed into Ask AI grounding.
 
 Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 
@@ -114,7 +126,7 @@ Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 |-------|--------|
 | Submit page shows `projectsteamcollective@gmail.com` | Yes |
 | “Write an email” opens the user’s mail app | Yes (`mailto:`) |
-| Gmail → website **draft** (Apps Script) | Ready — follow [`gmail/README.md`](./gmail/README.md) |
+| Gmail → website **draft** (Apps Script) | Live; latest script includes scanned-PDF OCR |
 | Auto-publish from email | **Never** — review required |
 
 ---
@@ -127,5 +139,9 @@ Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 
 ## 9) Next: smoke-test, then steamco.in
 
-Security **code** (signed admin cookie, RLS, rate limits) is deployed. Finish a smoke test on `projectstream.vercel.app`, then follow **Custom domain: steamco.in** in [AUTH.md](./AUTH.md). Do not change DNS first or Google login and Gmail ingest will miss the new host.
+Security code (signed Admin cookie, safe redirects, rate limits, headers) and
+database RLS are deployed. Auto-fill was retested after the token-limit fix.
+Finish the remaining checks in [STATUS.md](./STATUS.md), then follow
+**Custom domain: steamco.in** in [AUTH.md](./AUTH.md). Do not change DNS first:
+Google login, Supabase redirects, and Gmail ingest must be updated together.
 

@@ -5,9 +5,13 @@ A student passion-project website to publish STEM and educational content shared
 **Live:** [https://projectstream.vercel.app](https://projectstream.vercel.app)  
 **Custom domain (next):** `steamco.in` — cutover steps in [AUTH.md](./AUTH.md).
 
-See **[OPS.md](./OPS.md)** for day-to-day operations, **[AUTH.md](./AUTH.md)** for Google login + protected PDF downloads, and **[gmail/README.md](./gmail/README.md)** for Gmail → draft ingest.
+See **[STATUS.md](./STATUS.md)** for what is done and what is next,
+**[OPS.md](./OPS.md)** for day-to-day operations,
+**[AUTH.md](./AUTH.md)** for security/login/domain setup, and
+**[gmail/README.md](./gmail/README.md)** for Gmail → draft ingest.
 
-Built with **Next.js**, a hand-written CSS design system, and **Supabase** (optional for production database).
+Built with **Next.js**, Supabase, Vercel, Google Apps Script, Groq, and a
+hand-written CSS design system.
 
 ## Design system
 
@@ -27,10 +31,14 @@ Change a token once and it updates everywhere.
 
 - Public home, browse by subject, article pages, search
 - Submit page (email workflow)
-- **Ask Project STEAM** — grounded answers from your published library (+ optional Groq/OpenAI)
-- Admin dashboard — login, create/edit/publish articles (for reviewing email submissions)
+- **Ask Project STEAM** — grounded answers from published library articles
+- Admin dashboard — create/edit/publish/delete drafts and upload source files
+- Gmail attachment ingest with OCR and draft-only publishing
+- Google login with protected notes/downloads
+- Helpful votes that boost relevant search results
+- Google Analytics events for search, Ask AI, downloads, likes, and sign-in
 
-Demo content works out of the box. Connect Supabase to persist posts in production.
+Demo content works locally; production content persists in Supabase.
 
 ## Quick start (local)
 
@@ -78,39 +86,28 @@ ADMIN_PASSWORD=your-strong-password
 
 ### 3. Custom domain (steamco.in)
 
-The domain is purchased. **Do not point DNS until** Editor login, Google login, and ingest work on the Vercel URL. Then follow the full checklist **Custom domain: steamco.in** in [AUTH.md](./AUTH.md): Vercel domain + GoDaddy DNS, `NEXT_PUBLIC_SITE_URL`, Supabase redirect URLs, Apps Script `WEBHOOK_URL`, keep GA ID `G-VJ57TFG135`.
+The domain is purchased. Run the smoke test in [STATUS.md](./STATUS.md), then
+follow **Custom domain: steamco.in** in [AUTH.md](./AUTH.md): Vercel + GoDaddy
+DNS, `NEXT_PUBLIC_SITE_URL`, Supabase redirects, Apps Script `WEBHOOK_URL`, and
+the existing GA property.
 
-### 4. Optional — smarter AI answers
+### 4. AI provider
 
-Add `GROQ_API_KEY` (free) or `OPENAI_API_KEY` in Vercel. See [OPS.md](./OPS.md).
+Production uses `GROQ_API_KEY` with `openai/gpt-oss-20b`. OpenAI is an optional
+fallback only. Long Auto-fill requests are capped to fit Groq's developer-tier
+token limit. See [OPS.md](./OPS.md).
 
 ### 5. Update submit email
 
 Edit `src/lib/site.ts` → `submitEmail` (already set to `projectsteamcollective@gmail.com`).
 
-## Domain ideas for Project STEAM
-
-Exact names may already be taken. Check availability on [GoDaddy](https://www.godaddy.com/domains) or [Cloudflare](https://www.cloudflare.com/products/registrar/).
-
-| Domain style | Examples | Notes |
-|--------------|----------|-------|
-| Brand exact | `projectsteam.org`, `projectsteam.in` | Often taken — `projectsteam.org` may be for sale; `projectsteam.in` is used by another business |
-| Brand with hyphen | `project-steam.org`, `project-steam.in` | Easier to find available |
-| Purpose-led | `steamforkids.org`, `studentsteam.org`, `learnwithsteam.org` | Clear for education |
-| India-focused | `steaminindia.org`, `projectsteamindia.org` | Good for local audience |
-| Modern TLD | `projectsteam.app`, `projectsteam.site`, `projectsteam.education` | `.education` fits schools |
-
-**Recommendation for a 10th-grade passion project:** pick something available + easy to say aloud, e.g. `projectsteamindia.org` or `steamforkids.org`, rather than paying for a parked domain.
-
 ## Workflow: email → website
 
-1. Students email notes to your inbox
-2. Daughter (or you) logs into `/admin`
-3. **New article** — paste content, pick subject/topics, set author
-4. **Publish** when reviewed
-5. Content appears on browse/search/ask instantly
-
-Later: automate with Gmail API or inbound email (Resend) creating **drafts** only — still review before publish.
+1. Students email an attachment to `projectsteamcollective@gmail.com`.
+2. Apps Script extracts text/OCR, stores the original, and creates a draft.
+3. The Editor reviews or replaces the file and runs Auto-fill when needed.
+4. The Editor publishes after checking the generated fields.
+5. The article appears immediately in Browse, Search, and Ask AI.
 
 ## Scripts
 
@@ -126,4 +123,5 @@ Later: automate with Gmail API or inbound email (Resend) creating **drafts** onl
 
 ## License
 
-Content is community-submitted for education. Add a simple terms page before public launch.
+Content is community-submitted for education. Terms and Privacy pages remain a
+recommended pre-promotion task; see [STATUS.md](./STATUS.md).

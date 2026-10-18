@@ -1,4 +1,21 @@
-# Student social login + protected downloads
+# Security, Google login, and domain operations
+
+## Current status — 18 October 2026
+
+- Production is healthy at
+  [projectstream.vercel.app](https://projectstream.vercel.app).
+- Security code is deployed: signed Admin cookies, safe redirects, endpoint
+  rate limits, and browser security headers.
+- Supabase RLS is enabled on `posts` and `post_likes`; Storage is private.
+- Google is the only student login shown.
+- GA4 `G-VJ57TFG135` is live.
+- The latest Apps Script with PDF/image OCR is installed.
+- Auto-fill was fixed and retested after Groq rejected oversized requests.
+- The next milestone is the smoke test in [STATUS.md](./STATUS.md), followed by
+  the `steamco.in` cutover at the end of this document.
+
+The setup sections below remain as recovery/reference instructions. They are
+not an indication that setup is still outstanding.
 
 ## What is public vs protected
 
@@ -12,12 +29,12 @@
 
 ---
 
-## Already done (you said #1 and #2 are done)
+## Database and Storage
 
 - [x] Run `supabase/schema.sql`
 - [x] Create private Storage bucket named `materials`
-
-Continue from **Step A** below.
+- [x] Enable RLS on `posts` and `post_likes`
+- [x] Revoke direct `anon` / `authenticated` table access
 
 ---
 
@@ -266,9 +283,10 @@ After this, when a student emails a PDF/PPTX:
 
 ---
 
-## Quick checklist (remaining)
+## Launch checklist
 
-Launch on the current Vercel URL is complete except a **5-minute smoke test** (below), then **steamco.in**.
+Configuration is complete on the current Vercel URL. Auto-fill has also been
+retested successfully. Finish the user-flow checks, then move to `steamco.in`.
 
 - [x] Google Cloud project + OAuth consent screen + test users
 - [x] OAuth Web client with Supabase redirect URI
@@ -281,7 +299,8 @@ Launch on the current Vercel URL is complete except a **5-minute smoke test** (b
 - [x] RLS on `posts` and `post_likes`
 - [x] Rename Google OAuth app to **The Steam Collective Project**
 - [x] Add `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-VJ57TFG135`) and redeploy
-- [ ] Smoke-test Editor login + a student Google login + one like (after signed-cookie deploy)
+- [x] Retest long-document Auto-fill after the Groq token-limit fix
+- [ ] Smoke-test Editor login/file upload + student login/download + one like + one email ingest
 - [ ] Point **steamco.in** at Vercel (see **Custom domain: steamco.in** below)
 
 ---
@@ -427,7 +446,10 @@ Signed-in students can like an article. Search still requires a keyword match, t
 
 ## Security checklist (you do these in dashboards)
 
-Code now: signed editor cookie, safe login redirects, rate limits, browser security headers, placeholder admin password blocked on Vercel, RLS documented in `schema.sql`.
+Reported complete for the current Vercel deployment. Keep this section as the
+rotation/recovery checklist. Code now includes a signed Editor cookie, safe
+login redirects, rate limits, browser security headers, placeholder Admin
+password blocking on Vercel, and RLS in `schema.sql`.
 
 ### 1. Strong `ADMIN_PASSWORD` in Vercel
 
@@ -494,7 +516,7 @@ If `SUPABASE_SERVICE_ROLE_KEY` or `INGEST_SECRET` was pasted in chat or a screen
 
 ---
 
-## What to do first: security smoke test, then steamco.in
+## What to do next: smoke test, then steamco.in
 
 Do **not** switch DNS first. Login, downloads, and email ingest all have **hostnames baked in** (Supabase redirect URLs, Google OAuth, Apps Script `WEBHOOK_URL`, `NEXT_PUBLIC_SITE_URL`). If those still say `projectstream.vercel.app` while students open `steamco.in`, Google sign-in and ingest will fail on the new domain while the old URL still works.
 
@@ -508,16 +530,19 @@ Do **not** switch DNS first. Login, downloads, and email ingest all have **hostn
 Use [https://projectstream.vercel.app](https://projectstream.vercel.app):
 
 1. `/admin/login` — sign in with the **new** `ADMIN_PASSWORD`. (Old editor cookies were invalidated.)
-2. Open a draft → confirm file upload still works.
-3. Student **Continue with Google** → download a PDF.
+2. Open a draft → confirm Auto-fill and file upload work. Long-document
+   Auto-fill was already retested after commit `54cf93d`.
+3. Student **Continue with Google** → download a file.
 4. Click **This helped** on an article (requires Google sign-in).
-5. Analytics → **Realtime** — you should appear after browsing.
+5. Send one fresh email attachment → confirm a new draft appears.
+6. Analytics → **Realtime** — you should appear after browsing.
 
 If any of those fail, fix them **before** pointing the domain.
 
 ### Custom domain: steamco.in
 
-Do these in order. Tick as you go.
+Do these in order. Tick as you go. The first action when work resumes is:
+**Vercel → Project → Settings → Domains → Add `steamco.in`.**
 
 **A. Vercel**
 

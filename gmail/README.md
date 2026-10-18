@@ -2,11 +2,15 @@
 
 Students email **projectsteamcollective@gmail.com** with notes as:
 
-- **PDF** attachments  
-- **PPTX / PPT** attachments  
-- **Google Slides / Docs links** in the email body  
+- **PDF, PowerPoint, Word, image, or spreadsheet** attachments
+- **Google Slides / Docs links** in the email body
 
 A Google Apps Script extracts the text, then POSTs it to your website as a **draft only**. You still review and publish in `/admin`.
+
+**Current status (18 October 2026):** the latest script is installed against
+`projectstream.vercel.app`. It includes OCR for scanned PDFs/images, skips
+replies and attachment-free emails, and creates no Gmail labels. Change
+`WEBHOOK_URL` only during the `steamco.in` cutover.
 
 ```text
 Gmail (+ PDF / PPTX / Slides link)
@@ -39,13 +43,14 @@ Supabase draft
 5. Script properties:
    | Property | Value |
    |----------|--------|
-   | `WEBHOOK_URL` | `https://YOUR-DOMAIN.vercel.app/api/ingest/email` |
+   | `WEBHOOK_URL` | Current: `https://projectstream.vercel.app/api/ingest/email`; after cutover: `https://steamco.in/api/ingest/email` |
    | `INGEST_SECRET` | same as Vercel |
 6. Run `removeLegacyLabels` once (deletes old Ingested / Failed / Skipped labels). Approve Gmail, Drive, Docs, Slides, and external URL if asked.
 7. Run `testWebhookOnly` → check `/admin` for a draft
 8. Trigger: `processInbox` every 5–10 minutes
 
-If you already installed an older script, **re-paste** this file and re-run once — attachment parsing is new.
+If behavior differs from this document, re-paste this file from `main` and run
+`testWebhookOnly`.
 
 ## What becomes a draft
 
@@ -90,6 +95,9 @@ drafts from plain replies.
 
 Then the website LLM (Groq/OpenAI) builds the **title, subject,
 topics, summary (2–3 lines), and abstract (10–20 lines)** for the draft.
+Long extracted documents are capped before they reach Groq so Auto-fill remains
+within the developer-tier token-per-minute limit; the original full notes stay
+in the draft.
 
 ## Limits & caveats
 
@@ -117,4 +125,6 @@ topics, summary (2–3 lines), and abstract (10–20 lines)** for the draft.
 | `401 Unauthorized` | Matching `INGEST_SECRET` in Vercel + Script properties |
 | Replies still creating drafts | Re-paste the latest script — reply filtering is new |
 | Weak summaries | Add `GROQ_API_KEY` and redeploy |
-| Summaries empty / auto-fill warning about a model | Set `GROQ_MODEL` in Vercel to a current Groq model |
+| `HTTP 413` / tokens-per-minute error | Ensure commit `54cf93d` or later is deployed; it caps long Auto-fill prompts |
+| OpenAI `401` mentioning a `gsk_…` key | Remove `OPENAI_API_KEY`; `gsk_…` is a Groq key and OpenAI is optional |
+| Summaries empty / model unavailable | Use the default `openai/gpt-oss-20b`, or set `GROQ_MODEL` to a current Groq developer model |
