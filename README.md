@@ -35,7 +35,6 @@ Change a token once and it updates everywhere.
 - Admin dashboard — create/edit/publish/delete drafts and upload source files
 - Gmail attachment ingest with OCR and draft-only publishing
 - Google login with protected notes/downloads
-- Helpful votes that boost relevant search results
 - Google Analytics events for search, Ask AI, downloads, and sign-in
 
 Demo content works locally; production content persists in Supabase.
@@ -104,7 +103,8 @@ Edit `src/lib/site.ts` → `submitEmail` (already set to `projectsteamcollective
 ## Workflow: email → website
 
 1. Students email an attachment to `projectsteamcollective@gmail.com`.
-2. Apps Script extracts text/OCR, stores the original, and creates a draft.
+2. Apps Script extracts text/OCR, rejects binary-looking PDF output, stores the
+   original (up to 4MB), and creates a draft.
 3. The Editor reviews or replaces the file and runs Auto-fill when needed.
 4. The Editor publishes after checking the generated fields.
 5. The article appears immediately in Browse, Search, and Ask AI.

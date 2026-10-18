@@ -64,8 +64,9 @@ article excerpts and Auto-fill uses a simple text fallback.
 
 ## 3) Pull documents from `projectsteamcollective@gmail.com`
 
-**Live and draft-only.** Supports PDF (including Drive OCR for scans), PowerPoint,
-Word, images, spreadsheets, and Google Slides/Docs links. Full steps:
+**Live and draft-only.** Supports PDF (including Drive OCR for scans and
+binary-text rejection), PowerPoint, Word, images, spreadsheets, and Google
+Slides/Docs links. Original files up to 4MB are attached. Full steps:
 [`gmail/README.md`](./gmail/README.md)
 
 ```text
@@ -113,8 +114,11 @@ Built into Admin → **New/Edit article**:
 4. Review → set status to **Published** → save
 
 Auto-fill reads a capped extract so long OCR documents fit Groq's token limit.
-It does not replace the full Content field. The summary (`excerpt`) shows on
-cards and is fed into Ask AI grounding.
+It requests 6–12 searchable tags and excludes processing labels such as
+`from-email`, `pdf`, and `needs-review`. Wrapped JSON responses are recovered
+when possible. It does not replace readable full Content; binary-looking PDF
+output is discarded instead. The summary (`excerpt`) shows on cards and is fed
+into Ask AI grounding.
 
 Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 
@@ -126,7 +130,7 @@ Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 |-------|--------|
 | Submit page shows `projectsteamcollective@gmail.com` | Yes |
 | “Write an email” opens the user’s mail app | Yes (`mailto:`) |
-| Gmail → website **draft** (Apps Script) | Live; latest script includes scanned-PDF OCR |
+| Gmail → website **draft** (Apps Script) | Live; commit `5675f46` script includes scanned-PDF OCR, binary-text detection, and 4MB uploads |
 | Auto-publish from email | **Never** — review required |
 
 ---

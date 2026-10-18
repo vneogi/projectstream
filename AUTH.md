@@ -9,8 +9,10 @@
 - Supabase RLS is enabled on `posts` and `post_likes`; Storage is private.
 - Google is the only student login shown.
 - GA4 `G-VJ57TFG135` is live.
-- The latest Apps Script with PDF/image OCR is installed.
-- Auto-fill was fixed and retested after Groq rejected oversized requests.
+- The Apps Script from commit `5675f46` is installed, including PDF/image OCR,
+  binary-text detection, and the 4MB original-file limit.
+- Auto-fill now stays under Groq's token limit, recovers wrapped JSON, and
+  generates cleaner searchable tags.
 - The next milestone is the smoke test in [STATUS.md](./STATUS.md), followed by
   the `steamco.in` cutover at the end of this document.
 
@@ -300,7 +302,8 @@ retested successfully. Finish the user-flow checks, then move to `steamco.in`.
 - [x] Rename Google OAuth app to **The Steam Collective Project**
 - [x] Add `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-VJ57TFG135`) and redeploy
 - [x] Retest long-document Auto-fill after the Groq token-limit fix
-- [ ] Smoke-test Editor login/file upload + student login/download + one like + one email ingest
+- [ ] Smoke-test Editor Auto-fill/PDF upload + student login/download + removed
+  like UI + one email ingest
 - [ ] Point **steamco.in** at Vercel (see **Custom domain: steamco.in** below)
 
 ---
@@ -532,12 +535,17 @@ Do **not** switch DNS first. Login, downloads, and email ingest all have **hostn
 Use [https://projectstream.vercel.app](https://projectstream.vercel.app):
 
 1. `/admin/login` — sign in with the **new** `ADMIN_PASSWORD`. (Old editor cookies were invalidated.)
-2. Open a draft → confirm Auto-fill and file upload work. Long-document
-   Auto-fill was already retested after commit `54cf93d`.
-3. Student **Continue with Google** → download a file.
-4. Click **This helped** on an article (requires Google sign-in).
-5. Send one fresh email attachment → confirm a new draft appears.
-6. Analytics → **Realtime** — you should appear after browsing.
+2. Open a draft → run Auto-fill and confirm subject, summary, and searchable
+   tags are correct. Tags must not include `from-email`, `pdf`, or
+   `needs-review`.
+3. Create a draft, choose a PDF before the first save, and confirm it attaches.
+   Test a readable PDF and a scanned/compressed PDF; random binary symbols must
+   never be copied into Content.
+4. Student **Continue with Google** → download a file.
+5. Confirm article cards/pages no longer show the like control or count.
+6. Send one fresh email attachment → confirm a draft appears with clean
+   Content, sensible tags, and the original file attached.
+7. Analytics → **Realtime** — you should appear after browsing.
 
 If any of those fail, fix them **before** pointing the domain.
 

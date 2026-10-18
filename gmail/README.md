@@ -7,10 +7,11 @@ Students email **projectsteamcollective@gmail.com** with notes as:
 
 A Google Apps Script extracts the text, then POSTs it to your website as a **draft only**. You still review and publish in `/admin`.
 
-**Current status (18 October 2026):** the latest script is installed against
-`projectstream.vercel.app`. It includes OCR for scanned PDFs/images, skips
-replies and attachment-free emails, and creates no Gmail labels. Change
-`WEBHOOK_URL` only during the `steamco.in` cutover.
+**Current status (18 October 2026):** the script from commit `5675f46` is
+installed against `projectstream.vercel.app`. It includes OCR for scanned
+PDFs/images, rejects binary-looking extraction, uploads original files up to
+4MB, skips replies and attachment-free emails, and creates no Gmail labels.
+Change `WEBHOOK_URL` only during the `steamco.in` cutover.
 
 ```text
 Gmail (+ PDF / PPTX / Slides link)
@@ -84,7 +85,7 @@ drafts from plain replies.
 
 | Student sends | How text is extracted |
 |---------------|------------------------|
-| `.pdf` | Convert to Google Doc; if almost no text, retry with Drive **OCR** (scanned / camera PDFs) |
+| `.pdf` | Convert to Google Doc; if text is sparse or looks binary, retry with Drive **OCR** (scanned / camera PDFs) |
 | `.pptx` / `.ppt` / `.odp` | Convert to Google Slides → read slide + notes text |
 | `.docx` / `.doc` / `.odt` / `.rtf` | Convert to Google Doc → read text |
 | `.png` `.jpg` `.jpeg` `.gif` `.webp` `.img` | OCR via Drive when possible; original image is stored either way |
@@ -94,7 +95,9 @@ drafts from plain replies.
 | Plain email text | Included as-is |
 
 Then the website LLM (Groq/OpenAI) builds the **title, subject,
-topics, summary (2–3 lines), and abstract (10–20 lines)** for the draft.
+6–12 searchable topics, summary (2–3 lines), and abstract (10–20 lines)** for
+the draft. File/processing labels such as `from-email`, `pdf`, and
+`needs-review` are not stored as topics.
 Long extracted documents are capped before they reach Groq so Auto-fill remains
 within the developer-tier token-per-minute limit; the original full notes stay
 in the draft.
@@ -104,6 +107,8 @@ in the draft.
 | Case | What happens |
 |------|----------------|
 | Scanned / image-only PDF | Drive OCR is attempted; if it still fails, attach a file in Editor or ask the student for a text PDF |
+| Binary-looking PDF text | It is discarded instead of being pasted into Content; the original file remains attached |
+| Original file over 4MB | Automatic upload is skipped; compress the file and attach the smaller copy in Editor |
 | Huge decks | Text is capped (~40k chars per file) so summaries stay focused |
 | Private Slides link | Must share with the Gmail account or use “anyone with link” |
 | Auto-publish | **Never** — always draft until you publish |
@@ -120,11 +125,13 @@ in the draft.
 | Symptom | Fix |
 |---------|-----|
 | `Enable Drive API` error | Services (+) → Drive API |
-| Attachment ignored / empty notes | Re-paste the script so PDF OCR is on. Editor can also upload a file on the draft |
+| Attachment ignored / empty notes | Confirm the script from commit `5675f46` or later is installed. Editor can also upload a file on the draft |
+| Random symbols in Content | Re-paste the latest script; it detects bad PDF extraction and retries OCR. Clear old binary Content before saving |
+| Original file missing | Keep the file under 4MB, then resend or attach a compressed copy in Editor |
 | Slides link not read | Share with `projectsteamcollective@gmail.com` |
 | `401 Unauthorized` | Matching `INGEST_SECRET` in Vercel + Script properties |
 | Replies still creating drafts | Re-paste the latest script — reply filtering is new |
 | Weak summaries | Add `GROQ_API_KEY` and redeploy |
-| `HTTP 413` / tokens-per-minute error | Ensure commit `54cf93d` or later is deployed; it caps long Auto-fill prompts |
+| `HTTP 413` / tokens-per-minute error | Ensure commit `5675f46` or later is deployed; Auto-fill is capped and article Content is sanitized |
 | OpenAI `401` mentioning a `gsk_…` key | Remove `OPENAI_API_KEY`; `gsk_…` is a Groq key and OpenAI is optional |
 | Summaries empty / model unavailable | Use the default `openai/gpt-oss-20b`, or set `GROQ_MODEL` to a current Groq developer model |
