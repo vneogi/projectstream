@@ -16,6 +16,14 @@ describe("site branding", () => {
     );
   });
 
+  it("describes STEAM for learners all over the world", () => {
+    assert.match(siteConfig.description, /STEAM/);
+    assert.match(siteConfig.description, /all over the world/i);
+    assert.doesNotMatch(siteConfig.description, /India/);
+    assert.match(siteCopy.heroTitle, /STEAM/);
+    assert.doesNotMatch(siteCopy.heroDesc, /India/);
+  });
+
   it("has required hero and section copy", () => {
     for (const key of [
       "heroTitle",

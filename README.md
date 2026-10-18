@@ -1,6 +1,6 @@
 # Project STEAM
 
-A student passion-project website to publish STEM and educational content shared by hundreds of students — free for learners across India and the world.
+A student passion-project website to publish STEAM and educational content shared by hundreds of students — free for learners all over the world.
 
 **Live:** [https://projectstream.vercel.app](https://projectstream.vercel.app)  
 **Custom domain (next):** `steamco.in` — cutover steps in [AUTH.md](./AUTH.md).
@@ -36,7 +36,7 @@ Change a token once and it updates everywhere.
 - Gmail attachment ingest with OCR and draft-only publishing
 - Google login with protected notes/downloads
 - Helpful votes that boost relevant search results
-- Google Analytics events for search, Ask AI, downloads, likes, and sign-in
+- Google Analytics events for search, Ask AI, downloads, and sign-in
 
 Demo content works locally; production content persists in Supabase.
 

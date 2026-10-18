@@ -2,7 +2,7 @@ import type { Post } from "./types";
 import { updatePost } from "./data";
 import { getSupabaseAdmin, MATERIALS_BUCKET } from "./supabase/admin";
 
-const MAX_BYTES = 3.5 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 
 export function materialSizeLimit(): number {
   return MAX_BYTES;
@@ -18,7 +18,7 @@ export async function storePostMaterial(
       ok: false,
       status: 413,
       error:
-        "File too large for automatic upload (>3.5MB). Compress it or use a smaller copy.",
+        "File too large for automatic upload (>4MB). Compress it or use a smaller copy.",
     };
   }
 

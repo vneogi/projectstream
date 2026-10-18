@@ -277,7 +277,7 @@ Do this on **projectsteamcollective@gmail.com**.
 After this, when a student emails a PDF/PPTX:
 
 1. Text is extracted → draft created  
-2. Original file is uploaded into private `materials` storage (if ≤ ~3.5MB)  
+2. Original file is uploaded into private `materials` storage (if ≤ ~4MB)  
 3. You publish in `/admin`  
 4. Other students must **Sign in** to download  
 
@@ -426,6 +426,8 @@ Vercel does not need a new variable when the domain changes — only if you rota
 ---
 
 ## Helpful votes (likes)
+
+The public like button is removed. The table can remain unused.
 
 Run in the Supabase SQL editor (safe if you already ran `schema.sql`):
 

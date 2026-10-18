@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { createPost } from "@/lib/data";
+import { sanitizeArticleContent } from "@/lib/extract-text";
 import type { PostStatus } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     slug: body.slug,
     excerpt: body.excerpt,
     abstract: body.abstract,
-    content: body.content,
+    content: sanitizeArticleContent(String(body.content ?? "")),
     subjectSlug: body.subjectSlug,
     topics: body.topics ?? [],
     language: body.language ?? "en",

@@ -3,8 +3,28 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./Icon";
-import { isWeakExtractedContent } from "@/lib/extract-text";
+import { cleanSearchTopics } from "@/lib/enrich";
+import {
+  isGarbageExtractedText,
+  isWeakExtractedContent,
+  MAX_ARTICLE_CHARS,
+  sanitizeArticleContent,
+} from "@/lib/extract-text";
 import type { Post, PostStatus, Subject } from "@/lib/types";
+
+async function readApiError(res: Response): Promise<string> {
+  const raw = await res.text();
+  try {
+    const data = JSON.parse(raw) as { error?: string };
+    if (data.error) return data.error;
+  } catch {
+    /* not JSON */
+  }
+  if (res.status === 413 || /entity too large/i.test(raw)) {
+    return "The article text is too large to save. Remove garbled PDF dump from Content, keep a short overview, and attach the original file instead.";
+  }
+  return raw.slice(0, 220) || `Save failed (${res.status})`;
+}
 
 function slugify(text: string): string {
   return text
@@ -38,6 +58,7 @@ export function PostForm({
   const [enriching, setEnriching] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fileLabel, setFileLabel] = useState(post?.fileName ?? "");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   function handleTitleChange(value: string) {
     setTitle(value);
@@ -58,8 +79,19 @@ export function PostForm({
           subjectHint: subjectSlug || undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Auto-fill failed");
+      if (!res.ok) throw new Error(await readApiError(res));
+      const data = (await res.json()) as {
+        title?: string;
+        excerpt?: string;
+        abstract?: string;
+        content?: string;
+        subjectSlug?: string;
+        topics?: string[];
+        warning?: string;
+        provider?: string;
+        model?: string;
+        error?: string;
+      };
 
       if (data.title) handleTitleChange(data.title);
       if (data.excerpt) setExcerpt(data.excerpt);
@@ -84,39 +116,59 @@ export function PostForm({
     }
   }
 
+  async function uploadMaterial(postId: string, file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`/api/posts/${postId}/material`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) throw new Error(await readApiError(res));
+    const data = (await res.json()) as {
+      fileName?: string;
+      extractedText?: string;
+      parseNote?: string;
+    };
+
+    setFileLabel(data.fileName ?? file.name);
+    const extracted = sanitizeArticleContent(
+      String(data.extractedText ?? "").trim(),
+      file.name,
+    );
+    if (
+      extracted.length >= 40 &&
+      !isGarbageExtractedText(extracted) &&
+      !isWeakExtractedContent(extracted)
+    ) {
+      setContent((current) =>
+        !current.trim() || isWeakExtractedContent(current)
+          ? extracted
+          : `${current.trim()}\n\n${extracted}`.slice(0, MAX_ARTICLE_CHARS),
+      );
+    }
+    setNotice(data.parseNote ?? "File attached.");
+    setPendingFile(null);
+  }
+
   async function handleMaterial(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+
+    setError("");
+    setNotice("");
+    setWarning("");
+
     if (!post) {
-      setError("Save this as a draft first, then come back to attach a file.");
+      setPendingFile(file);
+      setFileLabel(`${file.name} (uploads when you save)`);
+      setNotice("File selected. It will upload when you create the article.");
       return;
     }
 
     setUploading(true);
-    setError("");
-    setNotice("");
-    setWarning("");
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch(`/api/posts/${post.id}/material`, {
-        method: "POST",
-        body: form,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload failed");
-
-      setFileLabel(data.fileName ?? file.name);
-      const extracted = String(data.extractedText ?? "").trim();
-      if (extracted.length >= 40) {
-        setContent((current) =>
-          !current.trim() || isWeakExtractedContent(current)
-            ? extracted
-            : `${current.trim()}\n\n${extracted}`,
-        );
-      }
-      setNotice(data.parseNote ?? "File attached.");
+      await uploadMaterial(post.id, file);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -134,12 +186,12 @@ export function PostForm({
       slug,
       excerpt,
       abstract,
-      content,
+      content: sanitizeArticleContent(content),
       subjectSlug,
-      topics: topics
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+      topics: cleanSearchTopics(
+        topics.split(",").map((t) => t.trim()).filter(Boolean),
+        12,
+      ),
       language: "en",
       status,
     };
@@ -147,18 +199,45 @@ export function PostForm({
     const url = post ? `/api/posts/${post.id}` : "/api/posts";
     const method = post ? "PUT" : "POST";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (res.ok) {
+      if (!res.ok) {
+        setError(await readApiError(res));
+        setLoading(false);
+        return;
+      }
+
+      const saved = (await res.json()) as { id?: string };
+      const savedId = post?.id ?? saved.id;
+      if (pendingFile && savedId) {
+        setUploading(true);
+        try {
+          await uploadMaterial(savedId, pendingFile);
+        } catch (err) {
+          setError(
+            err instanceof Error
+              ? `Article saved, but the file did not upload: ${err.message}`
+              : "Article saved, but the file did not upload.",
+          );
+          setLoading(false);
+          setUploading(false);
+          if (savedId && !post) {
+            router.push(`/admin/posts/${savedId}/edit`);
+          }
+          return;
+        }
+        setUploading(false);
+      }
+
       router.push("/admin");
       router.refresh();
-    } else {
-      const data = await res.json();
-      setError(data.error ?? "Failed to save");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
       setLoading(false);
     }
   }
@@ -190,22 +269,20 @@ export function PostForm({
           Original file (PDF or images)
         </label>
         <p className="field__hint">
-          {post
-            ? "One file per article. Combine several photos into a single PDF, then upload. We attach it for student download and try to parse text."
-            : "Save the draft first, then edit it to attach a PDF or image."}
+          One file per article, under 4MB. Combine several photos into a single
+          PDF, then upload. We attach it for student download. Compressed PDFs
+          often have no selectable text — type a short overview and Auto-fill.
         </p>
         {fileLabel ? (
           <p className="field__hint">Currently attached: {fileLabel}</p>
         ) : null}
-        {post ? (
-          <input
-            id="material"
-            type="file"
-            disabled={uploading}
-            accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.ppt,.pptx,.txt,image/*"
-            onChange={handleMaterial}
-          />
-        ) : null}
+        <input
+          id="material"
+          type="file"
+          disabled={uploading}
+          accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.ppt,.pptx,.txt,image/*"
+          onChange={handleMaterial}
+        />
         {uploading ? <p className="field__hint">Uploading…</p> : null}
       </div>
 

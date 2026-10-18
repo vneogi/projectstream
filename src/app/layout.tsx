@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Project STEAM — Student STEM knowledge for everyone",
+    default: "Project STEAM — Student STEAM knowledge for everyone",
     template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,

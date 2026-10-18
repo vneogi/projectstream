@@ -4,7 +4,11 @@ import {
   findPostBySourceMessageId,
   hasDatabase,
 } from "@/lib/data";
-import { enrichSubmission } from "@/lib/enrich";
+import { cleanSearchTopics, enrichSubmission } from "@/lib/enrich";
+import {
+  isGarbageExtractedText,
+  sanitizeArticleContent,
+} from "@/lib/extract-text";
 import { limitOrRespond } from "@/lib/http-limit";
 import { slugify, verifyIngestSecret } from "@/lib/security";
 
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
       const name = String(att.name ?? "attachment");
       const type = String(att.type ?? "file");
       const bodyText =
-        text.length >= 20
+        text.length >= 20 && !isGarbageExtractedText(text)
           ? text.slice(0, 40000)
           : 'Student submitted file "' +
             name +
@@ -153,22 +157,14 @@ export async function POST(request: Request) {
   const baseSlug = slugify(title) || `email-${Date.now()}`;
   const uniqueSlug = `${baseSlug}-${messageId.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toLowerCase()}`;
 
-  const topics = Array.from(
-    new Set(
-      [
-        "from-email",
-        ...attachments.map((a) => String(a.type ?? "").toLowerCase()).filter(Boolean),
-        ...enriched.topics,
-      ].map((t) => t.toLowerCase()),
-    ),
-  );
+  const topics = cleanSearchTopics(enriched.topics, 12);
 
   const post = await createPost({
     title,
     slug: uniqueSlug,
     excerpt: enriched.excerpt,
     abstract: enriched.abstract,
-    content: enriched.content,
+    content: sanitizeArticleContent(enriched.content),
     subjectSlug: enriched.subjectSlug,
     topics,
     language: "en",

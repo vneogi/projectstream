@@ -76,7 +76,7 @@ export async function POST(request: Request) {
         {
           role: "system",
           content:
-            "You are a helpful STEM tutor for Indian school students (Class 8–12). Answer using the provided Project STEAM library articles. Write 2–4 short paragraphs in simple language. If the articles do not contain enough information, say what is missing. End with a short line listing which source titles you used.",
+            "You are a helpful STEAM tutor for school students. Answer using the provided Project STEAM library articles. Write 2–4 short paragraphs in simple language. If the articles do not contain enough information, say what is missing. End with a short line listing which source titles you used.",
         },
         {
           role: "user",

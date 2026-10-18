@@ -16,15 +16,15 @@ export default function AboutPage() {
           <h1 className="section__title">{siteCopy.aboutTitle}</h1>
           <div className="prose">
             <p>
-              Project STEAM is a passion project started by a Class 10 student
-              who believes what you can learn should not depend on where you
-              live or which school you attend.
+              Project STEAM is a passion project started by a student who
+              believes what you can learn should not depend on where you live or
+              which school you attend.
             </p>
             <p>
               Hundreds of students send in notes, explanations, experiments, and
-              ideas about STEM. Each submission is read, categorized by subject
-              and topic, and published here so learners across India and the
-              world can use it for free.
+              ideas about STEAM. Each submission is read, categorized by subject
+              and topic, and published here so learners all over the world can
+              use it for free.
             </p>
             <h2>How it works</h2>
             <ol>
@@ -41,8 +41,8 @@ export default function AboutPage() {
             </ol>
             <h2>For students everywhere</h2>
             <p>
-              Whether you are preparing for board exams, curious about coding,
-              or exploring science on your own, this library is for you. If you
+              Whether you are preparing for exams, curious about coding, or
+              exploring science on your own, this library is for you. If you
               have something to teach, you are welcome to contribute.
             </p>
           </div>

@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   extractEmbeddedPdfText,
   extractTextFromUpload,
+  isGarbageExtractedText,
   isWeakExtractedContent,
+  sanitizeArticleContent,
 } from "../src/lib/extract-text.ts";
 
 describe("isWeakExtractedContent", () => {
@@ -14,6 +16,31 @@ describe("isWeakExtractedContent", () => {
       ),
       true,
     );
+  });
+});
+
+describe("isGarbageExtractedText", () => {
+  it("flags binary-looking PDF dumps", () => {
+    const dump =
+      "öwªAI  Ó  Ā íí þª Px ò ĀšeG  ~;8 2Ç «© Û NE =pKÌiKá)  3N  äs:gW AŽì n . (h  ädÍîÂP80";
+    assert.equal(isGarbageExtractedText(dump.repeat(8)), true);
+  });
+
+  it("keeps readable notes", () => {
+    assert.equal(
+      isGarbageExtractedText(
+        "Photosynthesis happens in chloroplasts. Chlorophyll captures light energy so plants can make sugar.",
+      ),
+      false,
+    );
+  });
+});
+
+describe("sanitizeArticleContent", () => {
+  it("replaces binary dumps so saves do not send huge garbage", () => {
+    const dump = "öwªAI Ó Ā íí þª Px ".repeat(40);
+    const cleaned = sanitizeArticleContent(dump);
+    assert.match(cleaned, /Could not read selectable text/i);
   });
 });
 

@@ -59,12 +59,12 @@ export async function POST(request: Request) {
   }
 
   // Vercel body limit ~4.5MB — keep a margin
-  const maxBytes = 3.5 * 1024 * 1024;
+  const maxBytes = 4 * 1024 * 1024;
   if (file.size > maxBytes) {
     return NextResponse.json(
       {
         error:
-          "File too large for automatic upload (>3.5MB). Compress the file or upload a smaller copy.",
+          "File too large for automatic upload (>4MB). Compress the file or use a smaller copy.",
         maxBytes,
       },
       { status: 413 },

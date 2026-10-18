@@ -11,6 +11,7 @@ import {
 } from "@/lib/supabase/admin";
 import { rankPostsForQuery } from "./library-search";
 import { mapPostRow } from "./map-post";
+import { sanitizeArticleContent } from "./extract-text";
 
 export function hasDatabase(): boolean {
   return Boolean(
@@ -150,7 +151,7 @@ export async function createPost(input: CreatePostInput): Promise<Post | null> {
     slug: input.slug,
     excerpt: input.excerpt,
     abstract: input.abstract ?? null,
-    content: input.content,
+    content: sanitizeArticleContent(input.content),
     subject_id: subject.id,
     subject_slug: subject.slug,
     subject_name: subject.name,
@@ -205,7 +206,7 @@ export async function updatePost(
   if (input.slug) updates.slug = input.slug;
   if (input.excerpt) updates.excerpt = input.excerpt;
   if (input.abstract !== undefined) updates.abstract = input.abstract;
-  if (input.content) updates.content = input.content;
+  if (input.content) updates.content = sanitizeArticleContent(input.content);
   if (input.topics) updates.topics = input.topics;
   if (input.language) updates.language = input.language;
   if (input.status) updates.status = input.status;
@@ -240,7 +241,10 @@ export async function updatePost(
     .select()
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    console.error("updatePost failed", error?.message);
+    return null;
+  }
   return mapPostRow(data);
 }
 

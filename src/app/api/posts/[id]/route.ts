@@ -12,17 +12,28 @@ export async function PUT(
   }
 
   const { id } = await context.params;
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json(
+      {
+        error:
+          "Could not read the article. If Content looks like random symbols, clear it, type a short overview, and try again.",
+      },
+      { status: 400 },
+    );
+  }
 
   const post = await updatePost(id, {
-    title: body.title,
-    slug: body.slug,
-    excerpt: body.excerpt,
-    abstract: body.abstract,
-    content: body.content,
-    subjectSlug: body.subjectSlug,
-    topics: body.topics,
-    language: body.language,
+    title: body.title as string,
+    slug: body.slug as string,
+    excerpt: body.excerpt as string,
+    abstract: body.abstract as string | undefined,
+    content: body.content as string,
+    subjectSlug: body.subjectSlug as string,
+    topics: body.topics as string[] | undefined,
+    language: body.language as string | undefined,
     status: body.status as PostStatus,
   });
 

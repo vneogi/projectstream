@@ -206,7 +206,7 @@ function processMessage_(message, webhookUrl, secret) {
     if (code >= 200 && code < 300) {
       message.markRead();
 
-      // Upload original PDF/PPTX for login-only download (≤ ~3.5MB each)
+      // Upload original PDF/PPTX for login-only download (≤ ~4MB each)
       try {
         var parsed = JSON.parse(text);
         if (parsed && parsed.postId) {
@@ -356,7 +356,7 @@ function extractAttachments_(message) {
     }
 
     text = cleanText_(text).slice(0, MAX_ATTACHMENT_CHARS);
-    if (text.length < 20) {
+    if (text.length < 20 || looksLikeGarbage_(text)) {
       text =
         'Student submitted file "' +
         name +
@@ -435,9 +435,31 @@ function extractLinkedDocs_(body) {
 /** PDF → Google Doc. Image-only scans get a second pass with OCR. */
 function extractPdfText_(blob) {
   var text = convertPdfToDocText_(blob, false);
-  if (cleanText_(text).length >= 80) return text;
+  var cleaned = cleanText_(text);
+  if (cleaned.length >= 80 && !looksLikeGarbage_(cleaned)) return text;
   var ocrText = convertPdfToDocText_(blob, true);
-  return cleanText_(ocrText).length >= cleanText_(text).length ? ocrText : text;
+  var ocrClean = cleanText_(ocrText);
+  if (looksLikeGarbage_(ocrClean) && !looksLikeGarbage_(cleaned) && cleaned.length >= ocrClean.length) {
+    return text;
+  }
+  return ocrClean.length >= cleaned.length ? ocrText : text;
+}
+
+function looksLikeGarbage_(text) {
+  var s = String(text || "").slice(0, 2000);
+  if (!s) return false;
+  var letters = 0;
+  var weird = 0;
+  var i;
+  for (i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) letters++;
+    if (c === 0 || c < 9 || (c > 13 && c < 32)) weird++;
+  }
+  var words = (s.match(/\b[A-Za-z]{3,}\b/g) || []).length;
+  if (weird > s.length * 0.08) return true;
+  if (letters < s.length * 0.28 && words < 18) return true;
+  return letters / s.length < 0.18 && s.length > 80;
 }
 
 function convertPdfToDocText_(blob, useOcr) {
@@ -629,7 +651,7 @@ function uploadOriginalFiles_(message, webhookUrl, secret, postId, messageId) {
     includeInlineImages: false,
     includeAttachments: true,
   });
-  var maxBytes = 3.5 * 1024 * 1024;
+  var maxBytes = 4 * 1024 * 1024;
 
   for (var i = 0; i < blobs.length; i++) {
     var blob = blobs[i];
@@ -639,7 +661,7 @@ function uploadOriginalFiles_(message, webhookUrl, secret, postId, messageId) {
     if (!isAllowedMaterial_(lower, mime)) continue;
 
     if (blob.getBytes().length > maxBytes) {
-      Logger.log("Skip upload (too large >3.5MB): " + name);
+      Logger.log("Skip upload (too large >4MB): " + name);
       continue;
     }
 

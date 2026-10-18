@@ -24,7 +24,7 @@ Last updated: 18 October 2026
 - Psychology, Design, Other, and General STEM categories
 - Public abstract pages and signed-in original-file downloads
 - Ask AI grounded in published articles
-- Article likes that boost matching search results
+- Public like button removed (like counts may still exist in the database)
 - Clickable Latest Submissions
 - Google-only student login
 - GA page views plus search, Ask AI, download, like, and sign-in events

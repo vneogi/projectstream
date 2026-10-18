@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it, beforeEach, afterEach, mock } from "node:test";
-import { enrichSubmission } from "../src/lib/enrich.ts";
+import {
+  cleanSearchTopics,
+  enrichSubmission,
+  parseJsonObject,
+} from "../src/lib/enrich.ts";
 
 describe("enrichSubmission (fallback, no LLM)", () => {
   const prevGroq = process.env.GROQ_API_KEY;
@@ -27,8 +31,10 @@ describe("enrichSubmission (fallback, no LLM)", () => {
     assert.match(result.title, /Photosynthesis/i);
     assert.ok(result.excerpt.length > 0);
     assert.ok(result.excerpt.length <= 220);
-    assert.equal(result.subjectSlug, "general-stem");
-    assert.ok(result.topics.includes("email-submission"));
+    assert.equal(result.subjectSlug, "biology");
+    assert.ok(result.topics.includes("photosynthesis"));
+    assert.ok(!result.topics.includes("email-submission"));
+    assert.ok(!result.topics.includes("from-email"));
     assert.ok(result.abstract.length > 0);
   });
 
@@ -105,7 +111,8 @@ describe("enrichSubmission (LLM JSON parse)", () => {
     assert.equal(result.provider, "groq");
     assert.equal(result.title, "Cell division: mitosis");
     assert.equal(result.subjectSlug, "biology");
-    assert.deepEqual(result.topics, ["mitosis", "cells"], "topics lowercased");
+    assert.ok(result.topics.includes("mitosis"));
+    assert.ok(result.topics.includes("cells"));
     assert.equal(result.authorName, "Riya");
     assert.match(result.abstract, /stage by stage/);
     assert.equal(result.warning, undefined);
@@ -141,6 +148,20 @@ describe("enrichSubmission (LLM JSON parse)", () => {
     );
     assert.equal(result.provider, null);
     assert.match(result.warning ?? "", /decommissioned/);
+  });
+
+  it("pulls JSON out of fences or extra prose", () => {
+    const parsed = parseJsonObject(
+      'Sure.\n```json\n{"title":"Chlorophyll","topics":["photosynthesis"]}\n```\n',
+    );
+    assert.equal(parsed?.title, "Chlorophyll");
+  });
+
+  it("drops file-type tags that are not searchable topics", () => {
+    assert.deepEqual(
+      cleanSearchTopics(["from-email", "pdf", "photosynthesis", "chlorophyll"]),
+      ["photosynthesis", "chlorophyll"],
+    );
   });
 
   it("rejects unknown subjectSlug from the model", async () => {
