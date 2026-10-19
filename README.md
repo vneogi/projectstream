@@ -2,13 +2,15 @@
 
 A student passion-project website to publish STEAM and educational content shared by hundreds of students — free for learners all over the world.
 
-**Live:** [https://projectstream.vercel.app](https://projectstream.vercel.app)  
-**Custom domain (next):** `steamco.in` — cutover steps in [AUTH.md](./AUTH.md).
+**Live:** [https://steamco.in](https://steamco.in)
+**Recovery host:** [https://projectstream.vercel.app](https://projectstream.vercel.app)
 
 See **[STATUS.md](./STATUS.md)** for what is done and what is next,
 **[OPS.md](./OPS.md)** for day-to-day operations,
 **[AUTH.md](./AUTH.md)** for security/login/domain setup, and
 **[gmail/README.md](./gmail/README.md)** for Gmail → draft ingest.
+Deferred security and privacy work is tracked in
+**[SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md)**.
 
 Built with **Next.js**, Supabase, Vercel, Google Apps Script, Groq, and a
 hand-written CSS design system.
@@ -103,8 +105,9 @@ Edit `src/lib/site.ts` → `submitEmail` (already set to `projectsteamcollective
 ## Workflow: email → website
 
 1. Students email an attachment to `projectsteamcollective@gmail.com`.
-2. Apps Script extracts text/OCR, rejects binary-looking PDF output, stores the
-   original (up to 4MB), and creates a draft.
+2. Apps Script extracts text/OCR, waits for delayed Drive conversion, rejects
+   binary-looking PDF output, stores the original (up to 4MB), and creates a
+   draft.
 3. The Editor reviews or replaces the file and runs Auto-fill when needed.
 4. The Editor publishes after checking the generated fields.
 5. The article appears immediately in Browse, Search, and Ask AI.
@@ -124,4 +127,5 @@ Edit `src/lib/site.ts` → `submitEmail` (already set to `projectsteamcollective
 ## License
 
 Content is community-submitted for education. Terms and Privacy pages remain a
-recommended pre-promotion task; see [STATUS.md](./STATUS.md).
+pre-promotion task; see
+[SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).

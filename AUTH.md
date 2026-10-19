@@ -2,19 +2,18 @@
 
 ## Current status — 18 October 2026
 
-- Production is healthy at
-  [projectstream.vercel.app](https://projectstream.vercel.app).
+- Production is live at [steamco.in](https://steamco.in); the Vercel hostname
+  remains available as a recovery route.
 - Security code is deployed: signed Admin cookies, safe redirects, endpoint
   rate limits, and browser security headers.
 - Supabase RLS is enabled on `posts` and `post_likes`; Storage is private.
 - Google is the only student login shown.
 - GA4 `G-VJ57TFG135` is live.
-- The Apps Script from commit `5675f46` is installed, including PDF/image OCR,
-  binary-text detection, and the 4MB original-file limit.
-- Auto-fill now stays under Groq's token limit, recovers wrapped JSON, and
-  generates cleaner searchable tags.
-- The next milestone is the smoke test in [STATUS.md](./STATUS.md), followed by
-  the `steamco.in` cutover at the end of this document.
+- Install the Apps Script from commit `7654c77`; it adds delayed OCR retries.
+- Auto-fill now uses extracted document text only and stops rather than
+  inventing copy when extraction fails.
+- Remaining security/privacy work is tracked in
+  [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
 
 The setup sections below remain as recovery/reference instructions. They are
 not an indication that setup is still outstanding.
@@ -304,7 +303,7 @@ retested successfully. Finish the user-flow checks, then move to `steamco.in`.
 - [x] Retest long-document Auto-fill after the Groq token-limit fix
 - [ ] Smoke-test Editor Auto-fill/PDF upload + student login/download + removed
   like UI + one email ingest
-- [ ] Point **steamco.in** at Vercel (see **Custom domain: steamco.in** below)
+- [x] Point **steamco.in** at Vercel (see **Custom domain: steamco.in** below)
 
 ---
 

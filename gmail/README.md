@@ -7,11 +7,11 @@ Students email **projectsteamcollective@gmail.com** with notes as:
 
 A Google Apps Script extracts the text, then POSTs it to your website as a **draft only**. You still review and publish in `/admin`.
 
-**Current status (18 October 2026):** the script from commit `5675f46` is
-installed against `projectstream.vercel.app`. It includes OCR for scanned
-PDFs/images, rejects binary-looking extraction, uploads original files up to
-4MB, skips replies and attachment-free emails, and creates no Gmail labels.
-Change `WEBHOOK_URL` only during the `steamco.in` cutover.
+**Current status (19 October 2026):** install the script from commit `7654c77`
+against `https://steamco.in/api/ingest/email`. It retries Drive conversion/OCR
+while Google Docs is still populating text, rejects binary-looking extraction,
+uploads original files up to 4MB, skips replies and attachment-free emails, and
+creates no Gmail labels.
 
 ```text
 Gmail (+ PDF / PPTX / Slides link)
@@ -85,7 +85,7 @@ drafts from plain replies.
 
 | Student sends | How text is extracted |
 |---------------|------------------------|
-| `.pdf` | Convert to Google Doc; if text is sparse or looks binary, retry with Drive **OCR** (scanned / camera PDFs) |
+| `.pdf` | Convert to Google Doc; wait/retry for converted text; if text is sparse or looks binary, retry with Drive **OCR** |
 | `.pptx` / `.ppt` / `.odp` | Convert to Google Slides → read slide + notes text |
 | `.docx` / `.doc` / `.odt` / `.rtf` | Convert to Google Doc → read text |
 | `.png` `.jpg` `.jpeg` `.gif` `.webp` `.img` | OCR via Drive when possible; original image is stored either way |
@@ -95,9 +95,13 @@ drafts from plain replies.
 | Plain email text | Included as-is |
 
 Then the website LLM (Groq/OpenAI) builds the **title, subject,
-6–12 searchable topics, summary (2–3 lines), and abstract (10–20 lines)** for
+3–12 searchable topics, summary (2–3 lines), and a source-supported abstract** for
 the draft. File/processing labels such as `from-email`, `pdf`, and
 `needs-review` are not stored as topics.
+Only extracted attachment text is sent to Auto-fill. Sender details, email
+wording, and filenames cannot ground article copy. If no readable attachment
+text exists, Auto-fill stops with a review warning instead of inventing a
+summary. Generated claims and tags that do not overlap the source are rejected.
 Long extracted documents are capped before they reach Groq so Auto-fill remains
 within the developer-tier token-per-minute limit; the original full notes stay
 in the draft.
@@ -125,13 +129,25 @@ in the draft.
 | Symptom | Fix |
 |---------|-----|
 | `Enable Drive API` error | Services (+) → Drive API |
-| Attachment ignored / empty notes | Confirm the script from commit `5675f46` or later is installed. Editor can also upload a file on the draft |
+| Attachment ignored / empty notes | Confirm the script from commit `7654c77` or later is installed. Check Apps Script Executions for the OCR retry log |
 | Random symbols in Content | Re-paste the latest script; it detects bad PDF extraction and retries OCR. Clear old binary Content before saving |
 | Original file missing | Keep the file under 4MB, then resend or attach a compressed copy in Editor |
 | Slides link not read | Share with `projectsteamcollective@gmail.com` |
 | `401 Unauthorized` | Matching `INGEST_SECRET` in Vercel + Script properties |
 | Replies still creating drafts | Re-paste the latest script — reply filtering is new |
 | Weak summaries | Add `GROQ_API_KEY` and redeploy |
-| `HTTP 413` / tokens-per-minute error | Ensure commit `5675f46` or later is deployed; Auto-fill is capped and article Content is sanitized |
+| `HTTP 413` / tokens-per-minute error | Ensure commit `7654c77` or later is deployed; Auto-fill is capped and article Content is sanitized |
+
+### Retesting an old failed submission
+
+Existing drafts that say “Little or no extractable text” do not contain the
+missing document text. Auto-fill must not guess it. After installing the latest
+Apps Script:
+
+1. Delete the failed draft (if it is safe to do so).
+2. Resend the original attachment as a fresh email, or mark the original
+   message unread after deleting the draft.
+3. Run `processInbox`.
+4. Confirm Content contains actual document text before reviewing Auto-fill.
 | OpenAI `401` mentioning a `gsk_…` key | Remove `OPENAI_API_KEY`; `gsk_…` is a Groq key and OpenAI is optional |
 | Summaries empty / model unavailable | Use the default `openai/gpt-oss-20b`, or set `GROQ_MODEL` to a current Groq developer model |

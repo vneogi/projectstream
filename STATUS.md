@@ -4,9 +4,10 @@ Last updated: 18 October 2026
 
 ## Live now
 
-- Production: [projectstream.vercel.app](https://projectstream.vercel.app)
-- Latest deployed fix: `5675f46` — worldwide STEAM copy, safer PDF handling,
-  better topic tags, and removal of public likes
+- Production: [steamco.in](https://steamco.in)
+- Recovery hostname: [projectstream.vercel.app](https://projectstream.vercel.app)
+- Latest parsing fix: `7654c77` — Auto-fill is grounded only in extracted
+  document text and stops when OCR fails instead of inventing content
 - Database: Supabase, with RLS enabled on `posts` and `post_likes`
 - Storage: private `materials` bucket; downloads go through authenticated server routes
 - Login: Google only
@@ -20,6 +21,9 @@ Last updated: 18 October 2026
 - PDF, PowerPoint, Word, image, spreadsheet, Google Docs, and Google Slides handling
 - Scanned PDF/image OCR through Google Drive where possible
 - Binary-looking PDF extraction is rejected instead of being pasted into Content
+- Drive OCR/conversion waits and retries before declaring a file unreadable
+- Email metadata and sender details are excluded from public article Content
+- Generated summaries/tags that are not supported by source text are discarded
 - Manual Editor file replacement/upload for edge cases
 - AI title, subject, 6–12 searchable topics, card summary, and abstract
 - File-type/processing tags such as `from-email`, `pdf`, and `needs-review`
@@ -47,9 +51,11 @@ Last updated: 18 October 2026
 - Security headers: frame blocking, MIME sniffing protection, restrictive device permissions
 - Ingest endpoint protected by `INGEST_SECRET`
 
-## Next: smoke test, then steamco.in
+## Next: verify the parsing fix
 
-Do this on the current Vercel host before changing DNS:
+After Vercel deploys `7654c77`, re-paste `gmail/ProjectSteamIngest.gs` and test
+with a fresh email. Old drafts do not contain missing OCR text and cannot be
+repaired by Auto-fill alone.
 
 - [ ] Sign into `/admin/login` with the current strong `ADMIN_PASSWORD`
 - [ ] Open a draft, run Auto-fill, and confirm the subject and generated tags
@@ -73,8 +79,8 @@ Do this on the current Vercel host before changing DNS:
   STEAM wording
 - [ ] Confirm GA4 Realtime sees the visit
 
-Once these pass, move to `steamco.in` using the ordered checklist in
-[AUTH.md](./AUTH.md#custom-domain-steamcoin).
+Security and privacy follow-up is tracked in
+[SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
 
 ## Optional, not blocking the domain
 
