@@ -3,6 +3,8 @@ import { describe, it, beforeEach, afterEach, mock } from "node:test";
 import {
   cleanSearchTopics,
   enrichSubmission,
+  extractGroundedMaterial,
+  inferSubjectFromText,
   parseJsonObject,
 } from "../src/lib/enrich.ts";
 
@@ -66,6 +68,58 @@ describe("enrichSubmission (fallback, no LLM)", () => {
     assert.ok(result.title.length > 0);
     assert.ok(result.content.includes("hi") || result.content === "hi");
   });
+
+  it("does not summarize an email when attachment OCR failed", async () => {
+    const raw = `Email subject: Submission of Quiz on Human Psychology
+From: Student <student@example.com>
+## Email message
+
+I made a psychology quiz and attached it.
+
+## Extracted files
+
+### Attachment (pdf): quiz.pdf
+
+Student submitted file "quiz.pdf". Little or no extractable text (photo or scanned page). Original is stored for download.`;
+    const result = await enrichSubmission(raw);
+    assert.equal(result.provider, null);
+    assert.equal(result.subjectSlug, "psychology");
+    assert.equal(result.abstract, "");
+    assert.deepEqual(result.topics, []);
+    assert.equal(result.extractionFailed, true);
+    assert.match(result.warning ?? "", /prevent invented content/i);
+    assert.doesNotMatch(result.content, /student@example\.com/);
+  });
+});
+
+describe("grounded email material", () => {
+  it("uses readable attachment text and excludes email metadata", () => {
+    const raw = `Email subject: Biology submission
+From: Student <student@example.com>
+## Email message
+
+Please approve my submission.
+
+## Extracted files
+
+### Attachment (pdf): cells.pdf
+
+Cells contain organelles. The nucleus stores genetic material and mitochondria release usable energy.`;
+    const grounded = extractGroundedMaterial(raw);
+    assert.equal(grounded.hasReadableAttachment, true);
+    assert.match(grounded.text, /nucleus stores genetic material/);
+    assert.doesNotMatch(grounded.text, /student@example\.com|approve my submission/);
+  });
+
+  it("classifies declared psychology and graphic-design submissions", () => {
+    assert.equal(inferSubjectFromText("A quiz on human psychology"), "psychology");
+    assert.equal(
+      inferSubjectFromText(
+        "Executive submission under the Design/Graphic Design category with educational posters",
+      ),
+      "design",
+    );
+  });
 });
 
 describe("enrichSubmission (LLM JSON parse)", () => {
@@ -106,7 +160,7 @@ describe("enrichSubmission (LLM JSON parse)", () => {
     }));
 
     const result = await enrichSubmission(
-      "Long enough student notes about mitosis and cell division for biology class.",
+      "Long student notes explain mitosis and cell division for biology class. The stages run from prophase through telophase with diagrams.",
     );
     assert.equal(result.provider, "groq");
     assert.equal(result.title, "Cell division: mitosis");
@@ -162,6 +216,41 @@ describe("enrichSubmission (LLM JSON parse)", () => {
       cleanSearchTopics(["from-email", "pdf", "photosynthesis", "chlorophyll"]),
       ["photosynthesis", "chlorophyll"],
     );
+  });
+
+  it("rejects generated claims that are not grounded in the source", async () => {
+    mock.method(globalThis, "fetch", async () => ({
+      ok: true,
+      text: async () => "",
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                title: "Quantum computing for medical diagnosis",
+                excerpt:
+                  "This advanced guide uses quantum algorithms to diagnose rare diseases.",
+                abstract:
+                  "Students build a quantum computer and apply it to hospital diagnostics.",
+                subjectSlug: "computer-science",
+                topics: ["quantum computing", "medical diagnosis"],
+              }),
+            },
+          },
+        ],
+      }),
+    }));
+
+    const source =
+      "Plants use chlorophyll to capture sunlight. Photosynthesis converts light energy into chemical energy.";
+    const result = await enrichSubmission(source);
+    assert.doesNotMatch(result.title, /quantum/i);
+    assert.doesNotMatch(result.excerpt, /diagnos/i);
+    assert.doesNotMatch(result.abstract, /hospital/i);
+    assert.ok(result.topics.includes("photosynthesis"));
+    assert.ok(result.topics.includes("chlorophyll"));
+    assert.ok(result.topics.includes("plant"));
+    assert.ok(!result.topics.some((topic) => /quantum|medical|diagnos/.test(topic)));
   });
 
   it("rejects unknown subjectSlug from the model", async () => {

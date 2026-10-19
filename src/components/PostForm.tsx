@@ -91,14 +91,24 @@ export function PostForm({
         provider?: string;
         model?: string;
         error?: string;
+        extractionFailed?: boolean;
       };
 
       if (data.title) handleTitleChange(data.title);
       if (data.excerpt) setExcerpt(data.excerpt);
-      if (data.abstract) setAbstract(data.abstract);
+      if (data.extractionFailed) {
+        setAbstract("");
+        setTopics("");
+      } else if (data.abstract) {
+        setAbstract(data.abstract);
+      }
       if (data.content) setContent(data.content);
       if (data.subjectSlug) setSubjectSlug(data.subjectSlug);
-      if (Array.isArray(data.topics) && data.topics.length > 0) {
+      if (
+        !data.extractionFailed &&
+        Array.isArray(data.topics) &&
+        data.topics.length > 0
+      ) {
         setTopics(data.topics.join(", "));
       }
 

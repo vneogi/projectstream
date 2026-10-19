@@ -473,7 +473,7 @@ function convertPdfToDocText_(blob, useOcr) {
     : { convert: true };
   var file = Drive.Files.insert(resource, blob, options);
   try {
-    return DocumentApp.openById(file.id).getBody().getText();
+    return readGoogleDocTextWithRetry_(file.id, useOcr ? "PDF OCR" : "PDF conversion");
   } finally {
     try {
       Drive.Files.remove(file.id);
@@ -507,7 +507,7 @@ function extractDocText_(blob) {
   };
   var file = Drive.Files.insert(resource, blob, { convert: true });
   try {
-    return DocumentApp.openById(file.id).getBody().getText();
+    return readGoogleDocTextWithRetry_(file.id, "document conversion");
   } finally {
     try {
       Drive.Files.remove(file.id);
@@ -528,12 +528,44 @@ function extractImageText_(blob) {
     ocrLanguage: "en",
   });
   try {
-    return DocumentApp.openById(file.id).getBody().getText();
+    return readGoogleDocTextWithRetry_(file.id, "image OCR");
   } finally {
     try {
       Drive.Files.remove(file.id);
     } catch (e) {}
   }
+}
+
+/**
+ * Drive conversion may return before Docs/OCR has populated the body. Reading
+ * immediately was producing empty text for otherwise valid PDFs and images.
+ */
+function readGoogleDocTextWithRetry_(fileId, label) {
+  var lastText = "";
+  var lastError = null;
+  for (var attempt = 1; attempt <= 5; attempt++) {
+    try {
+      lastText = DocumentApp.openById(fileId).getBody().getText() || "";
+      var cleaned = cleanText_(lastText);
+      if (cleaned.length >= 20 && !looksLikeGarbage_(cleaned)) {
+        if (attempt > 1) {
+          Logger.log(label + " succeeded on attempt " + attempt);
+        }
+        return lastText;
+      }
+    } catch (err) {
+      lastError = err;
+    }
+    if (attempt < 5) Utilities.sleep(attempt * 1000);
+  }
+  Logger.log(
+    label +
+      " produced no readable text after 5 attempts (chars=" +
+      cleanText_(lastText).length +
+      (lastError ? ", error=" + lastError : "") +
+      ")",
+  );
+  return lastText;
 }
 
 /** XLS/XLSX/CSV → temporary Google Sheet → cell text */

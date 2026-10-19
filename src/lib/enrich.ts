@@ -1,5 +1,9 @@
 import { chatCompletionDetailed, llmConfigured } from "./llm";
-import { isGarbageExtractedText, sanitizeArticleContent } from "./extract-text";
+import {
+  isGarbageExtractedText,
+  isWeakExtractedContent,
+  sanitizeArticleContent,
+} from "./extract-text";
 import { subjects } from "./seed-data";
 
 export type EnrichResult = {
@@ -14,6 +18,8 @@ export type EnrichResult = {
   model?: string;
   /** Set when the LLM was skipped or failed and heuristics were used. */
   warning?: string;
+  /** True when attachment OCR/extraction failed and generated copy was blocked. */
+  extractionFailed?: boolean;
 };
 
 const BANNED_TOPICS = new Set([
@@ -38,6 +44,29 @@ const BANNED_TOPICS = new Set([
 ]);
 
 const SUBJECT_KEYWORDS: { slug: string; words: string[] }[] = [
+  {
+    slug: "psychology",
+    words: [
+      "psychology",
+      "psychological",
+      "mental health",
+      "behaviour",
+      "behavior",
+      "cognition",
+      "emotion",
+    ],
+  },
+  {
+    slug: "design",
+    words: [
+      "graphic design",
+      "design category",
+      "poster",
+      "visual communication",
+      "typography",
+      "illustration",
+    ],
+  },
   {
     slug: "biology",
     words: [
@@ -97,7 +126,78 @@ const SUBJECT_KEYWORDS: { slug: string; words: string[] }[] = [
     slug: "computer-science",
     words: ["python", "algorithm", "program", "javascript", "coding", "loop"],
   },
+  {
+    slug: "engineering",
+    words: ["engineering", "aerospace", "robotics", "machine", "structure"],
+  },
 ];
+
+const INGEST_MARKER = "## Extracted files";
+const ATTACHMENT_MARKER = "### Attachment";
+
+export type GroundedMaterial = {
+  text: string;
+  hasIngestMarkers: boolean;
+  hasReadableAttachment: boolean;
+};
+
+/**
+ * Email ingest wraps files with sender/message metadata. Only attachment text
+ * may ground public article copy; an email saying what a file is about is not
+ * a substitute for reading that file.
+ */
+export function extractGroundedMaterial(raw: string): GroundedMaterial {
+  if (!raw.includes(INGEST_MARKER)) {
+    return {
+      text: raw.trim(),
+      hasIngestMarkers: false,
+      hasReadableAttachment: raw.trim().length >= 40 && !isWeakExtractedContent(raw),
+    };
+  }
+
+  const attachmentSection = raw.split(INGEST_MARKER).slice(1).join(INGEST_MARKER);
+  const blocks = attachmentSection.split(ATTACHMENT_MARKER).slice(1);
+  const readable = blocks
+    .map((block) => {
+      const lines = block.split(/\r?\n/);
+      const body = lines.slice(1).join("\n").trim();
+      return isWeakExtractedContent(body) ? "" : body;
+    })
+    .filter((text) => text.length >= 40);
+
+  return {
+    text: readable.join("\n\n").trim(),
+    hasIngestMarkers: true,
+    hasReadableAttachment: readable.length > 0,
+  };
+}
+
+function emailSubjectFromRaw(raw: string): string {
+  const match = raw.match(/^Email subject:\s*(.+)$/im);
+  return match?.[1]?.trim().slice(0, 120) || "Submission needs document review";
+}
+
+function unparsedSubmission(raw: string, subjectHint?: string): EnrichResult {
+  const subject =
+    inferSubjectFromText(raw) ??
+    subjects.find((s) => s.slug === subjectHint)?.slug ??
+    "general-stem";
+  return {
+    title: emailSubjectFromRaw(raw),
+    excerpt:
+      "The original file is attached, but its text could not be extracted. Review the file and add a factual summary before publishing.",
+    abstract: "",
+    subjectSlug: subject,
+    topics: [],
+    authorName: "Student contributor",
+    content:
+      "Document text was not extracted. Review the attached original and replace this message with verified notes before publishing.",
+    provider: null,
+    extractionFailed: true,
+    warning:
+      "No readable text was extracted from the attached document. Auto-fill was stopped to prevent invented content. Review the original file, add verified notes, then run Auto-fill again.",
+  };
+}
 
 function textHasKeyword(lower: string, word: string): boolean {
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -159,6 +259,35 @@ export function heuristicTopics(text: string): string[] {
   return cleanSearchTopics(found, 10);
 }
 
+function groundingTokens(text: string): Set<string> {
+  const tokens = text.toLowerCase().match(/[a-z0-9]{4,}/g) ?? [];
+  return new Set(
+    tokens.map((token) =>
+      token.length > 4 && token.endsWith("s") ? token.slice(0, -1) : token,
+    ),
+  );
+}
+
+export function hasGroundingCoverage(
+  generated: string,
+  source: string,
+  minimum = 0.35,
+): boolean {
+  const sourceTokens = groundingTokens(source);
+  const generatedTokens = [...groundingTokens(generated)];
+  if (generatedTokens.length === 0) return false;
+  const supported = generatedTokens.filter((token) => sourceTokens.has(token));
+  return supported.length / generatedTokens.length >= minimum;
+}
+
+function groundedTopics(raw: unknown, source: string): string[] {
+  const sourceTokens = groundingTokens(source);
+  return cleanSearchTopics(raw, 12).filter((topic) => {
+    const tokens = [...groundingTokens(topic.replace(/-/g, " "))];
+    return tokens.length > 0 && tokens.some((token) => sourceTokens.has(token));
+  });
+}
+
 /** Parse model output that may wrap JSON in fences or extra prose. */
 export function parseJsonObject(raw: string): Record<string, unknown> | null {
   const cleaned = raw
@@ -205,8 +334,8 @@ function fallbackEnrich(raw: string, subjectHint?: string): EnrichResult {
     "Student notes awaiting review.";
   const abstract = firstSentences(body, 12, 1600) || usable.slice(0, 1600);
   const subject =
-    subjects.find((s) => s.slug === subjectHint)?.slug ??
     inferSubjectFromText(usable) ??
+    subjects.find((s) => s.slug === subjectHint)?.slug ??
     "general-stem";
 
   return {
@@ -242,7 +371,13 @@ export async function enrichSubmission(
   raw: string,
   options?: { subjectHint?: string; fromName?: string },
 ): Promise<EnrichResult> {
-  const text = raw.trim();
+  const original = raw.trim();
+  const grounded = extractGroundedMaterial(original);
+  if (grounded.hasIngestMarkers && !grounded.hasReadableAttachment) {
+    return unparsedSubmission(original, options?.subjectHint);
+  }
+
+  const text = grounded.text || original;
   if (text.length < 20) {
     return fallbackEnrich(text, options?.subjectHint);
   }
@@ -264,18 +399,23 @@ export async function enrichSubmission(
 Return ONLY valid JSON (no markdown fences, no extra text) with these keys:
 - title: clear short title
 - subjectSlug: exactly one of [${subjectList}]. Choose from the content (biology for plants/photosynthesis, physics for forces/radioactivity, etc.)
-- topics: array of 6–12 short lowercase searchable topic tags about the science (never tags like from-email, pdf, attachment, needs-review)
+- topics: array of 3–12 short lowercase searchable topic tags explicitly supported by the source (never tags like from-email, pdf, attachment, needs-review)
 - excerpt: 2–3 line summary for cards and search (max 240 chars)
-- abstract: a 10–20 line overview a student can read before downloading. Cover what the material teaches, the key ideas, and who it helps. Use short paragraphs separated by blank lines.
+- abstract: a factual overview a student can read before downloading. Use only as many lines as the source supports.
 
-Keep the original notes as-is. Do not invent facts.`,
+STRICT GROUNDING RULES:
+- Use only facts explicitly stated in SOURCE MATERIAL.
+- Do not infer theories, examples, audience, benefits, recommendations, or learning outcomes.
+- Do not use sender details, email wording, filenames, or submission claims as document content.
+- If the source is sparse, return a sparse summary. Never fill space by guessing.
+- Keep the original notes as-is. Do not invent facts.`,
       },
       {
         role: "user",
-        content: `Raw submission:\n\n${text.slice(0, 5000)}`,
+        content: `SOURCE MATERIAL:\n\n${text.slice(0, 5000)}`,
       },
     ],
-    { temperature: 0.2, maxTokens: 900 },
+    { temperature: 0, maxTokens: 900 },
   );
 
   if (!outcome.ok) {
@@ -298,22 +438,32 @@ Keep the original notes as-is. Do not invent facts.`,
   const heuristics = fallbackEnrich(text, options?.subjectHint);
 
   const subjectSlug =
+    inferSubjectFromText(text) ??
     subjects.find((s) => s.slug === parsed.subjectSlug)?.slug ??
     subjects.find((s) => s.slug === options?.subjectHint)?.slug ??
-    inferSubjectFromText(text) ??
     "general-stem";
 
-  const topics = cleanSearchTopics(parsed.topics, 12);
+  const topics = groundedTopics(parsed.topics, text);
   const mergedTopics = cleanSearchTopics(
     [...topics, ...heuristics.topics],
     12,
   );
+  const generatedTitle = String(parsed.title ?? "").trim();
+  const generatedExcerpt = String(parsed.excerpt ?? "").trim().slice(0, 280);
+  const generatedAbstract = String(parsed.abstract ?? "").trim();
 
   return {
-    title: String(parsed.title ?? "").trim() || heuristics.title,
+    title:
+      (hasGroundingCoverage(generatedTitle, text, 0.3) && generatedTitle) ||
+      heuristics.title,
     excerpt:
-      String(parsed.excerpt ?? "").trim().slice(0, 280) || heuristics.excerpt,
-    abstract: String(parsed.abstract ?? "").trim() || heuristics.abstract,
+      (hasGroundingCoverage(generatedExcerpt, text, 0.35) &&
+        generatedExcerpt) ||
+      heuristics.excerpt,
+    abstract:
+      (hasGroundingCoverage(generatedAbstract, text, 0.3) &&
+        generatedAbstract) ||
+      heuristics.abstract,
     subjectSlug,
     topics: mergedTopics.length > 0 ? mergedTopics : heuristics.topics,
     authorName:
