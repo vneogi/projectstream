@@ -176,7 +176,7 @@ export function rankPostsForAsk(posts: Post[], query: string): Post[] {
 
   // A fuzzy token is enough to rescue a lone typo, but once a strong result
   // exists, discard weak fuzzy coincidences from unrelated articles.
-  const cutoff = bestScore >= 3 ? Math.max(3, bestScore * 0.5) : 2;
+  const cutoff = bestScore >= 5 ? 4 : bestScore >= 3 ? 3 : 2;
   return ranked
     .filter(({ score }) => score >= cutoff)
     .map(({ post }) => post);

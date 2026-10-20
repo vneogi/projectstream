@@ -116,7 +116,7 @@ describe("rankPostsForQuery", () => {
     const relevant: Post = {
       ...seed,
       id: "plant",
-      title: "How Photosynthesis Works",
+      title: "Photosynthesis Basics",
       slug: "photosynthesis",
       excerpt: "Plants convert light into chemical energy.",
       abstract: "Chlorophyll helps plants use light.",
@@ -129,7 +129,7 @@ describe("rankPostsForQuery", () => {
       id: "internet",
       title: "How the Internet Works",
       slug: "internet",
-      excerpt: "Routers move packets between connected devices.",
+      excerpt: "Students work with routers and connected devices.",
       abstract:
         "Malformed legacy extraction accidentally mentions photosynthesis.",
       subjectSlug: "computer-science",
