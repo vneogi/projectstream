@@ -92,6 +92,29 @@ export async function POST(request: Request) {
     );
 
     if (outcome.ok) {
+      if (
+        outcome.content
+          .toLowerCase()
+          .includes("project steam has not yet published articles on this topic")
+      ) {
+        const suggestions = suggestPostsForQuery(published, q);
+        await recordUsageEvent(request, {
+          eventType: "ask",
+          queryText: q,
+          resultCount: 0,
+          metadata: {
+            provider: outcome.provider,
+            suggestion_count: suggestions.length,
+          },
+        });
+        return NextResponse.json({
+          answer: NO_MATCH_ANSWER,
+          provider: outcome.provider,
+          sources: suggestions.map(sourceCard),
+          suggested: true,
+        });
+      }
+
       await recordUsageEvent(request, {
         eventType: "ask",
         queryText: q,

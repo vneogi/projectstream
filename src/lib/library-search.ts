@@ -96,19 +96,6 @@ function haystack(post: Post): string {
     .toLowerCase();
 }
 
-function publicHaystack(post: Post): string {
-  return [
-    post.title,
-    post.excerpt,
-    post.abstract ?? "",
-    post.subjectName,
-    post.subjectSlug,
-    ...post.topics,
-  ]
-    .join(" ")
-    .toLowerCase();
-}
-
 function words(text: string): string[] {
   return text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
 }
@@ -155,7 +142,10 @@ export function rankPostsForAsk(posts: Post[], query: string): Post[] {
       const topics = post.topics.join(" ").toLowerCase();
       const summary = `${post.excerpt} ${post.abstract ?? ""}`.toLowerCase();
       const subject = `${post.subjectName} ${post.subjectSlug}`.toLowerCase();
-      const candidates = words(publicHaystack(post));
+      // Fuzzy matching is intentionally limited to editorial titles/tags.
+      // Summaries contain enough prose that an unrelated word can otherwise
+      // look deceptively close to a misspelling.
+      const candidates = words(`${post.title} ${post.topics.join(" ")}`);
       let score = 0;
 
       for (const token of tokens) {
