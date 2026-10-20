@@ -401,13 +401,12 @@ Return ONLY valid JSON (no markdown fences, no extra text) with these keys:
 - subjectSlug: exactly one of [${subjectList}]. Choose from the content (biology for plants/photosynthesis, physics for forces/radioactivity, etc.)
 - topics: array of 3–12 short lowercase searchable topic tags explicitly supported by the source (never tags like from-email, pdf, attachment, needs-review)
 - excerpt: 2–3 line summary for cards and search (max 240 chars)
-- abstract: a factual overview a student can read before downloading. Use only as many lines as the source supports.
+- abstract: if SOURCE MATERIAL is a substantial article or notes (more than a short email), write 10–20 lines in short paragraphs separated by blank lines covering what it teaches and the key ideas. If the source is only a few sentences, keep the abstract equally short. Never pad with invented facts.
 
 STRICT GROUNDING RULES:
 - Use only facts explicitly stated in SOURCE MATERIAL.
-- Do not infer theories, examples, audience, benefits, recommendations, or learning outcomes.
+- Do not infer theories, examples, audience, benefits, recommendations, or learning outcomes that the source does not state.
 - Do not use sender details, email wording, filenames, or submission claims as document content.
-- If the source is sparse, return a sparse summary. Never fill space by guessing.
 - Keep the original notes as-is. Do not invent facts.`,
       },
       {
@@ -415,7 +414,7 @@ STRICT GROUNDING RULES:
         content: `SOURCE MATERIAL:\n\n${text.slice(0, 5000)}`,
       },
     ],
-    { temperature: 0, maxTokens: 900 },
+    { temperature: 0, maxTokens: 1200 },
   );
 
   if (!outcome.ok) {

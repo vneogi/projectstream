@@ -128,7 +128,11 @@ function processMessage_(message, webhookUrl, secret) {
   var subject = message.getSubject() || "";
   var from = message.getFrom() || "";
   var fromName = extractName_(from);
-  var body = message.getPlainBody() || stripHtml_(message.getBody() || "");
+  var htmlBody = "";
+  try {
+    htmlBody = message.getBody() || "";
+  } catch (htmlErr) {}
+  var body = message.getPlainBody() || stripHtml_(htmlBody);
   var receivedAt = message.getDate()
     ? message.getDate().toISOString()
     : new Date().toISOString();
@@ -149,7 +153,9 @@ function processMessage_(message, webhookUrl, secret) {
   }
 
   var attachments = extractAttachments_(message);
-  var linkedDocs = extractLinkedDocs_(body);
+  // Gmail's plain text often drops hyperlink URLs and keeps only the label
+  // ("Why Does Music Make Us Feel Things 1.0"). Scan HTML too.
+  var linkedDocs = extractLinkedDocs_(body + "\n" + htmlBody);
   var allExtracted = attachments.concat(linkedDocs);
 
   var attachmentTextLen = 0;
@@ -385,11 +391,11 @@ function extractLinkedDocs_(body) {
 
   var slideIds = uniqueMatches_(
     body,
-    /https:\/\/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/g,
+    /docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/g,
   );
   var docIds = uniqueMatches_(
     body,
-    /https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/g,
+    /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/g,
   );
 
   for (var i = 0; i < slideIds.length && results.length < MAX_ATTACHMENTS; i++) {
@@ -413,7 +419,7 @@ function extractLinkedDocs_(body) {
 
   for (var d = 0; d < docIds.length && results.length < MAX_ATTACHMENTS; d++) {
     try {
-      var docText = DocumentApp.openById(docIds[d]).getBody().getText();
+      var docText = extractGoogleDocTextById_(docIds[d]);
       docText = cleanText_(docText).slice(0, MAX_ATTACHMENT_CHARS);
       if (docText.length >= 20) {
         results.push({
@@ -423,6 +429,8 @@ function extractLinkedDocs_(body) {
           text: docText,
           sourceUrl: "https://docs.google.com/document/d/" + docIds[d],
         });
+      } else {
+        Logger.log("Google Doc " + docIds[d] + " had no readable text");
       }
     } catch (err) {
       Logger.log("Could not read Doc " + docIds[d] + ": " + err);
@@ -430,6 +438,50 @@ function extractLinkedDocs_(body) {
   }
 
   return results;
+}
+
+/**
+ * Read a Google Doc by ID. DocumentApp fails when the file is only
+ * "anyone with the link" and not explicitly shared with this account.
+ * The Docs export URL still works for those public-link files.
+ */
+function extractGoogleDocTextById_(docId) {
+  try {
+    var opened = DocumentApp.openById(docId).getBody().getText();
+    opened = cleanText_(opened);
+    if (opened.length >= 20) return opened;
+  } catch (err) {
+    Logger.log("DocumentApp.openById failed for " + docId + ": " + err);
+  }
+  return exportGoogleDocText_(docId);
+}
+
+function exportGoogleDocText_(docId) {
+  var token = ScriptApp.getOAuthToken();
+  var urls = [
+    "https://docs.google.com/document/d/" + docId + "/export?format=txt",
+    "https://www.googleapis.com/drive/v3/files/" +
+      docId +
+      "/export?mimeType=text%2Fplain",
+  ];
+  for (var i = 0; i < urls.length; i++) {
+    try {
+      var res = UrlFetchApp.fetch(urls[i], {
+        muteHttpExceptions: true,
+        followRedirects: true,
+        headers: { Authorization: "Bearer " + token },
+      });
+      var code = res.getResponseCode();
+      var text = cleanText_(res.getContentText());
+      Logger.log("Doc export " + docId + " via " + urls[i] + " → " + code + " chars=" + text.length);
+      if (code >= 200 && code < 300 && text.length >= 20 && !looksLikeGarbage_(text)) {
+        return text;
+      }
+    } catch (err) {
+      Logger.log("Doc export failed " + urls[i] + ": " + err);
+    }
+  }
+  return "";
 }
 
 /** PDF → Google Doc. Image-only scans get a second pass with OCR. */

@@ -120,6 +120,23 @@ describe("email ingest rules", () => {
     );
   });
 
+  it("finds Google Doc IDs in HTML even when plain text dropped the URL", () => {
+    const html =
+      'Below I have attached two versions.<br>' +
+      '<a href="https://docs.google.com/document/d/1WHE-nf8diMCFO83rZz2DDJLFytATcEzKnGRmh2bmLhE/edit?tab=t.0">' +
+      "Why Does Music Make Us Feel Things 1.0</a>";
+    const plain = "Why Does Music Make Us Feel Things 1.0";
+    const combined = plain + "\n" + html;
+    const ids: string[] = [];
+    const re = /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(combined))) {
+      if (!ids.includes(match[1])) ids.push(match[1]);
+    }
+    assert.deepEqual(ids, ["1WHE-nf8diMCFO83rZz2DDJLFytATcEzKnGRmh2bmLhE"]);
+    assert.equal(/docs\.google\.com\/document\/d\//.test(plain), false);
+  });
+
   it("accepts attachment text even when body is empty", () => {
     assert.equal(
       hasEnoughContent({

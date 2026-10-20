@@ -91,7 +91,7 @@ drafts from plain replies.
 | `.png` `.jpg` `.jpeg` `.gif` `.webp` `.img` | OCR via Drive when possible; original image is stored either way |
 | `.xlsx` `.xls` `.csv` `.ods` | Convert to Google Sheets → read cell text |
 | Google Slides link | Open presentation (if shared) → read slides |
-| Google Doc link | Open doc (if shared) → read body |
+| Google Doc link | Read from HTML **and** plain text (Gmail often drops the URL in plain text). Open the Doc if shared, otherwise export as text when the link is viewable. |
 | Plain email text | Included as-is |
 
 Then the website LLM (Groq/OpenAI) builds the **title, subject,
