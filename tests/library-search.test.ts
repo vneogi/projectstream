@@ -110,6 +110,40 @@ describe("rankPostsForQuery", () => {
     assert.deepEqual(ranked.map((post) => post.slug), [internet.slug]);
   });
 
+  it("ignores unrelated legacy abstracts when selecting Ask sources", () => {
+    const seed = searchPosts("")[0];
+    assert.ok(seed);
+    const relevant: Post = {
+      ...seed,
+      id: "plant",
+      title: "How Photosynthesis Works",
+      slug: "photosynthesis",
+      excerpt: "Plants convert light into chemical energy.",
+      abstract: "Chlorophyll helps plants use light.",
+      subjectSlug: "biology",
+      subjectName: "Biology",
+      topics: ["photosynthesis", "plants"],
+    };
+    const contaminated: Post = {
+      ...seed,
+      id: "internet",
+      title: "How the Internet Works",
+      slug: "internet",
+      excerpt: "Routers move packets between connected devices.",
+      abstract:
+        "Malformed legacy extraction accidentally mentions photosynthesis.",
+      subjectSlug: "computer-science",
+      subjectName: "Computer Science",
+      topics: ["internet", "networks"],
+    };
+
+    const ranked = rankPostsForAsk(
+      [contaminated, relevant],
+      "how does photosynthesis work",
+    );
+    assert.deepEqual(ranked.map((post) => post.slug), [relevant.slug]);
+  });
+
   it("suggests same-subject articles when an exact topic is unpublished", () => {
     const biology = searchPosts("").filter((post) => post.subjectSlug === "biology");
     const suggestions = suggestPostsForQuery(biology, "How does photosynthesis work?");

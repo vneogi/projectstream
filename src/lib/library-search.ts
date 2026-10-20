@@ -149,21 +149,23 @@ export function rankPostsForAsk(posts: Post[], query: string): Post[] {
 
   const ranked = posts
     .map((post) => {
-      const title = post.title.toLowerCase();
-      const topics = post.topics.join(" ").toLowerCase();
-      const summary = `${post.excerpt} ${post.abstract ?? ""}`.toLowerCase();
-      const subject = `${post.subjectName} ${post.subjectSlug}`.toLowerCase();
+      // Excerpts are short, reviewed card copy. Some legacy abstracts contain
+      // mixed extraction from unrelated files, so they must not choose sources.
+      const titleWords = words(post.title);
+      const topicWords = words(post.topics.join(" "));
+      const summaryWords = words(post.excerpt);
+      const subjectWords = words(`${post.subjectName} ${post.subjectSlug}`);
       // Fuzzy matching is intentionally limited to editorial titles/tags.
       // Summaries contain enough prose that an unrelated word can otherwise
       // look deceptively close to a misspelling.
-      const candidates = words(`${post.title} ${post.topics.join(" ")}`);
+      const candidates = [...titleWords, ...topicWords];
       let score = 0;
 
       for (const token of tokens) {
-        if (title.includes(token)) score += 6;
-        else if (topics.includes(token)) score += 5;
-        else if (summary.includes(token)) score += 3;
-        else if (subject.includes(token)) score += 2;
+        if (titleWords.includes(token)) score += 6;
+        else if (topicWords.includes(token)) score += 5;
+        else if (summaryWords.includes(token)) score += 3;
+        else if (subjectWords.includes(token)) score += 2;
         else if (fuzzyMatch(token, candidates)) score += 2;
       }
       return { post, score };
