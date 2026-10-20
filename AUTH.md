@@ -1,22 +1,20 @@
 # Security, Google login, and domain operations
 
-## Current status — 18 October 2026
+## Current status — 20 October 2026
 
 - Production is live at [steamco.in](https://steamco.in); the Vercel hostname
-  remains available as a recovery route.
-- Security code is deployed: signed Admin cookies, safe redirects, endpoint
-  rate limits, and browser security headers.
-- Supabase RLS is enabled on `posts` and `post_likes`; Storage is private.
-- Google is the only student login shown.
-- GA4 `G-VJ57TFG135` is live.
-- Install the Apps Script from commit `7654c77`; it adds delayed OCR retries.
-- Auto-fill now uses extracted document text only and stops rather than
-  inventing copy when extraction fails.
-- Remaining security/privacy work is tracked in
+  remains the recovery route.
+- Security model: [SECURITY.md](./SECURITY.md). Privacy handling:
+  [PRIVACY.md](./PRIVACY.md). Remaining work:
   [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
+- Google is the only student login. Editor uses a signed password cookie.
+- GA4 `G-VJ57TFG135` is live. First-party usage events power `/admin`.
+- Apps Script webhook: `https://steamco.in/api/ingest/email`.
+- Auto-fill uses extracted document text only and stops rather than inventing
+  copy when extraction fails.
 
-The setup sections below remain as recovery/reference instructions. They are
-not an indication that setup is still outstanding.
+The setup sections below remain as recovery/reference. They are not a sign
+that the domain or login still need to be wired from scratch.
 
 ## What is public vs protected
 
@@ -149,21 +147,15 @@ This tells Supabase where to send students **after** Google login (your Next.js 
 
 1. Supabase → **Authentication** → **URL Configuration**  
    (sometimes under Authentication → Settings)
-2. Set **Site URL** to your live site, for example:
+2. Set **Site URL** to production:
    ```text
-   https://projectstream.vercel.app
+   https://steamco.in
    ```
-   (or `https://projectsteam.vercel.app` if that is your primary domain)
 3. Under **Redirect URLs**, add each of these on its own line / entry:
    ```text
+   https://steamco.in/auth/callback
+   https://www.steamco.in/auth/callback
    https://projectstream.vercel.app/auth/callback
-   ```
-   If you also use another Vercel domain:
-   ```text
-   https://projectsteam.vercel.app/auth/callback
-   ```
-   For local testing later:
-   ```text
    http://localhost:3000/auth/callback
    ```
 4. **Save**
@@ -194,7 +186,7 @@ Both are required.
 | `ADMIN_PASSWORD` | a strong password for `/admin` |
 | `INGEST_SECRET` | output of `openssl rand -hex 32` (same value you will put in Apps Script) |
 | `GROQ_API_KEY` | from [console.groq.com](https://console.groq.com) (recommended) |
-| `NEXT_PUBLIC_SITE_URL` | `https://projectstream.vercel.app` (or your real domain) |
+| `NEXT_PUBLIC_SITE_URL` | `https://steamco.in` |
 
 5. After saving, go to **Deployments**
 6. Open the latest deployment → **⋯** → **Redeploy**  
@@ -268,7 +260,7 @@ Do this on **projectsteamcollective@gmail.com**.
 
 | Property | Value |
 |----------|--------|
-| `WEBHOOK_URL` | `https://projectstream.vercel.app/api/ingest/email` |
+| `WEBHOOK_URL` | `https://steamco.in/api/ingest/email` |
 | `INGEST_SECRET` | **same** string as Vercel `INGEST_SECRET` |
 
 7. Run `removeLegacyLabels` once (deletes old Ingested / Failed / Skipped labels)
@@ -286,8 +278,8 @@ After this, when a student emails a PDF/PPTX:
 
 ## Launch checklist
 
-Configuration is complete on the current Vercel URL. Auto-fill has also been
-retested successfully. Finish the user-flow checks, then move to `steamco.in`.
+Configuration is complete on steamco.in. Keep this list as a recovery
+checklist if login or ingest is rewired.
 
 - [x] Google Cloud project + OAuth consent screen + test users
 - [x] OAuth Web client with Supabase redirect URI
@@ -301,8 +293,8 @@ retested successfully. Finish the user-flow checks, then move to `steamco.in`.
 - [x] Rename Google OAuth app to **The Steam Collective Project**
 - [x] Add `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-VJ57TFG135`) and redeploy
 - [x] Retest long-document Auto-fill after the Groq token-limit fix
-- [ ] Smoke-test Editor Auto-fill/PDF upload + student login/download + removed
-  like UI + one email ingest
+- [ ] Reconfirm Editor Auto-fill, student login/download, usage dashboard, and
+  one email ingest on steamco.in (see [STATUS.md](./STATUS.md))
 - [x] Point **steamco.in** at Vercel (see **Custom domain: steamco.in** below)
 
 ---
@@ -404,8 +396,9 @@ Custom events the site sends (same names in **Events**):
 | `search` | Student submits the search box (`search_term` is stored) |
 | `ask_ai` | Student sends an Ask AI question |
 | `file_download` | Signed-in student clicks download |
-| `article_like` | Student clicks “This helped” |
 | `sign_in_click` | Student clicks Continue with Google |
+
+The public like button is removed; do not expect `article_like` in new traffic.
 
 Standard reports can take **24–48 hours** to fill in. Realtime is immediate.
 
@@ -429,22 +422,9 @@ Vercel does not need a new variable when the domain changes — only if you rota
 
 ## Helpful votes (likes)
 
-The public like button is removed. The table can remain unused.
-
-Run in the Supabase SQL editor (safe if you already ran `schema.sql`):
-
-```sql
-alter table posts add column if not exists like_count integer not null default 0;
-
-create table if not exists post_likes (
-  post_id uuid not null references posts(id) on delete cascade,
-  user_id uuid not null,
-  created_at timestamptz not null default now(),
-  primary key (post_id, user_id)
-);
-```
-
-Signed-in students can like an article. Search still requires a keyword match, then more-liked articles rank higher among those matches.
+The public like button is removed. `like_count` and `post_likes` may still
+exist from earlier schema. Removing them is a backlog item, not required for
+the live site.
 
 ---
 
@@ -520,18 +500,16 @@ If `SUPABASE_SERVICE_ROLE_KEY` or `INGEST_SECRET` was pasted in chat or a screen
 
 ---
 
-## What to do next: smoke test, then steamco.in
+## Domain cutover notes (already done)
 
-Do **not** switch DNS first. Login, downloads, and email ingest all have **hostnames baked in** (Supabase redirect URLs, Google OAuth, Apps Script `WEBHOOK_URL`, `NEXT_PUBLIC_SITE_URL`). If those still say `projectstream.vercel.app` while students open `steamco.in`, Google sign-in and ingest will fail on the new domain while the old URL still works.
+steamco.in is the public URL. Login, downloads, and email ingest all have
+hostnames baked in (Supabase redirect URLs, Google OAuth, Apps Script
+`WEBHOOK_URL`, `NEXT_PUBLIC_SITE_URL`). Keep `projectstream.vercel.app` as
+backup. If you ever move host again, update every callback in one sitting.
 
-**Order:**
+### Smoke test (do this on steamco.in)
 
-1. **10-minute smoke test on the current Vercel site** (security + features).
-2. **Then** add steamco.in in Vercel and update every callback in one sitting (checklist below). Keep `projectstream.vercel.app` as a backup until steamco.in login works.
-
-### Smoke test (do this now)
-
-Use [https://projectstream.vercel.app](https://projectstream.vercel.app):
+Use [https://steamco.in](https://steamco.in):
 
 1. `/admin/login` — sign in with the **new** `ADMIN_PASSWORD`. (Old editor cookies were invalidated.)
 2. Open a draft → run Auto-fill and confirm subject, summary, and searchable

@@ -7,11 +7,12 @@ Students email **projectsteamcollective@gmail.com** with notes as:
 
 A Google Apps Script extracts the text, then POSTs it to your website as a **draft only**. You still review and publish in `/admin`.
 
-**Current status (19 October 2026):** install the script from commit `7654c77`
-against `https://steamco.in/api/ingest/email`. It retries Drive conversion/OCR
-while Google Docs is still populating text, rejects binary-looking extraction,
-uploads original files up to 4MB, skips replies and attachment-free emails, and
-creates no Gmail labels.
+**Current status (20 October 2026):** production webhook is
+`https://steamco.in/api/ingest/email`. Keep the script on `main`
+(`gmail/ProjectSteamIngest.gs`) pasted in Apps Script. It retries Drive
+conversion/OCR while Google Docs is still populating text, rejects
+binary-looking extraction, uploads original files up to 4MB, skips replies and
+attachment-free emails, and creates no Gmail labels.
 
 ```text
 Gmail (+ PDF / PPTX / Slides link)
@@ -44,7 +45,7 @@ Supabase draft
 5. Script properties:
    | Property | Value |
    |----------|--------|
-   | `WEBHOOK_URL` | Current: `https://projectstream.vercel.app/api/ingest/email`; after cutover: `https://steamco.in/api/ingest/email` |
+   | `WEBHOOK_URL` | `https://steamco.in/api/ingest/email` |
    | `INGEST_SECRET` | same as Vercel |
 6. Run `removeLegacyLabels` once (deletes old Ingested / Failed / Skipped labels). Approve Gmail, Drive, Docs, Slides, and external URL if asked.
 7. Run `testWebhookOnly` → check `/admin` for a draft
@@ -122,21 +123,21 @@ in the draft.
 1. Student emails PDF/PPTX/Slides to `projectsteamcollective@gmail.com`
 2. Within ~10 minutes a **draft** appears in `/admin` (Source: From email)
 3. You review summary + subject → set **Published** → Save
-4. Summary shows on cards; full text powers Search / Ask AI
+4. Summary shows on cards; published notes power Search / Ask AI
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
 | `Enable Drive API` error | Services (+) → Drive API |
-| Attachment ignored / empty notes | Confirm the script from commit `7654c77` or later is installed. Check Apps Script Executions for the OCR retry log |
+| Attachment ignored / empty notes | Confirm the latest `ProjectSteamIngest.gs` from `main` is installed. Check Apps Script Executions for the OCR retry log |
 | Random symbols in Content | Re-paste the latest script; it detects bad PDF extraction and retries OCR. Clear old binary Content before saving |
 | Original file missing | Keep the file under 4MB, then resend or attach a compressed copy in Editor |
 | Slides link not read | Share with `projectsteamcollective@gmail.com` |
 | `401 Unauthorized` | Matching `INGEST_SECRET` in Vercel + Script properties |
 | Replies still creating drafts | Re-paste the latest script — reply filtering is new |
 | Weak summaries | Add `GROQ_API_KEY` and redeploy |
-| `HTTP 413` / tokens-per-minute error | Ensure commit `7654c77` or later is deployed; Auto-fill is capped and article Content is sanitized |
+| `HTTP 413` / tokens-per-minute error | Auto-fill is capped and article Content is sanitized; redeploy if an old build is still live |
 
 ### Retesting an old failed submission
 

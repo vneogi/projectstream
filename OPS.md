@@ -1,172 +1,170 @@
 # Operations guide — Project STEAM
 
-Quick answers for running [projectstream.vercel.app](https://projectstream.vercel.app).
-For the current launch checklist, see [STATUS.md](./STATUS.md).
+How to run [steamco.in](https://steamco.in).
+Product map: [WEBSITE.md](./WEBSITE.md). Launch checklist: [STATUS.md](./STATUS.md).
 
 ---
 
-## 1) Vercel project name vs public URL
+## 1) Hostnames
 
-**Not a mistake** if your dashboard is now:
+| Thing | URL | Students see it? |
+|-------|-----|------------------|
+| Production | [steamco.in](https://steamco.in) | Yes |
+| Recovery | [projectstream.vercel.app](https://projectstream.vercel.app) | Only if you share it |
+| Vercel dashboard path | `vercel.com/…/projectsteam/…` | No |
 
-`vercel.com/vneogis-projects/projectsteam/...`
-
-That is only the **project name inside Vercel** (settings/dashboard path). Renaming it to `projectsteam` is what you wanted for branding.
-
-| Thing | Example | What students see |
-|-------|---------|-------------------|
-| Vercel dashboard path | `…/projectsteam/settings` | No — only you |
-| Public site URL | `projectstream.vercel.app` or `projectsteam.vercel.app` | Yes |
-
-To get the nicer **public** URL:
-1. Project → **Settings → Domains**
-2. Add `projectsteam.vercel.app` (if available)
-3. Make it the primary domain
-
-Old `projectstream.vercel.app` can keep working until you remove it.
-
-If `projectsteam.vercel.app` is taken, buy a custom domain (best long-term).
+Keep the Vercel hostname until steamco.in login, ingest, and TLS are trusted.
+`www.steamco.in` still needs a certificate/DNS fix (backlog).
 
 ---
 
-## 2) Make Ask AI live (OpenAI or free LLM)
+## 2) Ask AI
 
-Ask AI already works once you add a key. **Recommended for a student project: Groq (free).**
+**Live.** Groq is the primary provider.
 
-### Option A — Groq (free)
+| Variable | Role |
+|----------|------|
+| `GROQ_API_KEY` | Required in production |
+| `GROQ_MODEL` | Optional override (default `openai/gpt-oss-20b`) |
+| `OPENAI_API_KEY` | Optional fallback; must be a real OpenAI key, not `gsk_…` |
+| `OPENAI_MODEL` | Optional (`gpt-4o-mini` default) |
 
-1. Create an account at [console.groq.com](https://console.groq.com)
-2. Create an API key
-3. Vercel → Project → **Settings → Environment Variables**
-4. Add:
-   - Name: `GROQ_API_KEY`
-   - Value: your key
-   - Environment: Production (and Preview if you want)
-5. **Redeploy** (Deployments → … → Redeploy)
+Without a provider key, Ask AI still returns a grounded excerpt summary.
 
-### Option B — OpenAI (paid, cheap for light use)
+Behaviour to expect:
 
-Same steps with `OPENAI_API_KEY` from [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+- Consolidates matching published articles with inline titles
+- Typo-tolerant title/tag matching
+- Unpublished topic copy plus optional same-subject cards
+- Rate limit: 20 questions / 10 minutes / instance
 
-The site prefers **Groq first**, then OpenAI. The normal model is
-`openai/gpt-oss-20b`; `openai/gpt-oss-120b` is a fallback. Llama 3.x IDs are no
-longer used on developer keys.
-
-Auto-fill sends a capped extract of long notes and requests only generated
-metadata, keeping the request below Groq's 8,000 TPM developer limit. Full notes
-remain unchanged in the Editor. If `OPENAI_API_KEY` contains a Groq `gsk_…` key,
-remove it—OpenAI keys use their own provider format and are optional here.
-
-Without either provider key, Ask AI still returns a grounded summary from
-article excerpts and Auto-fill uses a simple text fallback.
+If answers look invented, check that the matching article’s Content is real
+extracted text, not a leftover binary dump. Re-run Auto-fill only after the
+source text is present.
 
 ---
 
-## 3) Pull documents from `projectsteamcollective@gmail.com`
+## 3) Gmail → draft
 
-**Live and draft-only.** Supports PDF (including Drive OCR for scans and
-binary-text rejection), PowerPoint, Word, images, spreadsheets, and Google
-Slides/Docs links. Original files up to 4MB are attached. Full steps:
-[`gmail/README.md`](./gmail/README.md)
+**Live and draft-only.** Full steps: [gmail/README.md](./gmail/README.md).
 
 ```text
-Gmail → Apps Script → POST /api/ingest/email → Supabase draft → you publish in /admin
+Gmail → Apps Script → POST https://steamco.in/api/ingest/email
+      → Supabase draft → publish in /admin
 ```
 
-Quick checklist:
-1. Connect Supabase + run `supabase/schema.sql`
-2. Set `INGEST_SECRET` (and Supabase keys) in Vercel → Redeploy
-3. Paste `gmail/ProjectSteamIngest.gs` into Apps Script on that Gmail account
-4. Add Script properties `WEBHOOK_URL` + `INGEST_SECRET`
-5. Run `removeLegacyLabels` once (clears old Ingested / Failed / Skipped labels), then `testWebhookOnly`, then add a 5–10 min trigger on `processInbox`
+Checklist:
 
-**Never auto-publishes.** Emails become drafts only.
+1. `INGEST_SECRET` matches Vercel and Apps Script
+2. `WEBHOOK_URL` = `https://steamco.in/api/ingest/email`
+3. Latest `gmail/ProjectSteamIngest.gs` is pasted
+4. Trigger on `processInbox` every 5–10 minutes
+
+**Never auto-publishes.**
+
+To reprocess a failed email: delete the bad draft if needed, mark the Gmail
+message unread, wait for the trigger (or run `processInbox`). Auto-fill cannot
+recover text that was never extracted.
 
 ---
 
-## 4) Branding: Project STEAM
+## 4) Branding and copy
 
 Site brand is **Project STEAM** (STEAM in all caps).
-
----
-
-## 5) How to update text on the site
 
 | What to change | Where |
 |----------------|--------|
 | Homepage headlines, hero, join CTA | `src/lib/site.ts` → `siteCopy` |
 | Site name, description, submit email | `src/lib/site.ts` → `siteConfig` |
-| About page paragraphs | `src/app/about/page.tsx` |
-| Local/demo fallback articles | `src/lib/seed-data.ts` |
-| Production drafts and published articles | `/admin` on the live site |
+| About page | `src/app/about/page.tsx` |
+| Local/demo articles | `src/lib/seed-data.ts` |
+| Production articles | `/admin` |
 
-Workflow: edit file → commit → push to GitHub → Vercel redeploys in ~1 minute.
-
----
-
-## 6) Auto-categorize + summary
-
-Built into Admin → **New/Edit article**:
-
-1. Paste notes into **Content**, or open an ingested draft
-2. Optionally upload/replace the original source file
-3. Click **Auto-fill subject, topics, summary & abstract**
-4. Review → set status to **Published** → save
-
-Auto-fill reads a capped extract so long OCR documents fit Groq's token limit.
-It requests 6–12 searchable tags and excludes processing labels such as
-`from-email`, `pdf`, and `needs-review`. Wrapped JSON responses are recovered
-when possible. It does not replace readable full Content; binary-looking PDF
-output is discarded instead. The summary (`excerpt`) shows on cards and is fed
-into Ask AI grounding.
-
-Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
+Workflow for code copy: edit → commit → push `main` → Vercel redeploys.
 
 ---
 
-## 7) Is email submission working?
+## 5) Auto-fill
+
+Admin → New/Edit article → **Auto-fill subject, topics, summary & abstract**.
+
+- Reads a capped extract so long OCR documents fit Groq’s token limit
+- Requests 6–12 searchable tags
+- Excludes `from-email`, `pdf`, `needs-review`
+- Does not replace readable full Content
+- Stops instead of inventing copy when extraction failed
+
+Requires `GROQ_API_KEY` (or OpenAI).
+
+---
+
+## 6) Email submission status
 
 | Piece | Status |
 |-------|--------|
 | Submit page shows `projectsteamcollective@gmail.com` | Yes |
-| “Write an email” opens the user’s mail app | Yes (`mailto:`) |
-| Gmail → website **draft** (Apps Script) | Live; commit `5675f46` script includes scanned-PDF OCR, binary-text detection, and 4MB uploads |
-| Auto-publish from email | **Never** — review required |
+| “Write an email” opens the mail app | Yes (`mailto:`) |
+| Gmail → website draft | Live on steamco.in |
+| Auto-publish | **Never** |
 
 ---
 
-## 8) Google Analytics
+## 7) Google Analytics
 
-**On.** Measurement ID `G-VJ57TFG135` is in Vercel (`NEXT_PUBLIC_GA_MEASUREMENT_ID`). The live site loads `gtag/js?id=G-VJ57TFG135`. Full setup: [AUTH.md](./AUTH.md). Keep this ID when moving to steamco.in.
-
----
-
-## 9) Private Editor usage dashboard
-
-Run [`supabase/usage-analytics.sql`](./supabase/usage-analytics.sql) once in the
-Supabase SQL Editor. The Admin dashboard then reports:
-
-- page views and active visitors
-- signed-in active users
-- Search and Ask AI questions
-- unanswered questions and zero-result searches (content opportunities)
-- most viewed and downloaded articles
-- most visited pages and daily activity
-
-Only the service-role server can access `usage_events`; browser roles are
-revoked and RLS has no public policy. Raw IP addresses are never stored. The
-server stores a keyed one-way visitor hash so unique activity can be estimated.
-Search terms and Ask AI questions are retained because the Editor explicitly
-needs to understand content demand. Use the documented 180-day cleanup query
-unless a different retention period is chosen in the Privacy policy.
+**On.** `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-VJ57TFG135`.
+Setup and event names: [AUTH.md](./AUTH.md).
+Keep this ID; do not create a second property for steamco.in.
 
 ---
 
-## 10) Next: smoke-test, then steamco.in
+## 8) Private Editor usage dashboard
 
-Security code (signed Admin cookie, safe redirects, rate limits, headers) and
-database RLS are deployed. Auto-fill was retested after the token-limit fix.
-Finish the remaining checks in [STATUS.md](./STATUS.md), then follow
-**Custom domain: steamco.in** in [AUTH.md](./AUTH.md). Do not change DNS first:
-Google login, Supabase redirects, and Gmail ingest must be updated together.
+SQL has been run. `/admin` reports the last 30 days:
 
+- Page views and active visitors (hashed, not raw IP)
+- Signed-in users
+- Search terms and Ask AI questions
+- Unanswered questions and zero-result searches
+- Most viewed / downloaded articles
+- Most visited pages and daily activity
+
+Events start **after** the table exists. Historical GA visits are not imported.
+
+Optional dedicated salt:
+
+```env
+ANALYTICS_HASH_SALT=
+```
+
+If unset, the hash uses `INGEST_SECRET` or `ADMIN_PASSWORD`. Changing those
+secrets would rotate visitor identity, so a dedicated salt is better long-term.
+
+Retention cleanup (suggested 180 days):
+
+```sql
+delete from usage_events where created_at < now() - interval '180 days';
+```
+
+---
+
+## 9) Deploy habit
+
+Push to `main` on [github.com/vneogi/projectstream](https://github.com/vneogi/projectstream).
+Vercel production follows automatically.
+
+If an env var starting with `NEXT_PUBLIC_` changes, you must **redeploy** so
+it is baked into the browser bundle.
+
+---
+
+## 10) When something looks wrong
+
+| Symptom | First check |
+|---------|-------------|
+| Ask AI cites unrelated articles | Confirm latest commit is deployed; try a clearer question |
+| Ask AI invents how-tos | Should be blocked; report the question if it happens |
+| Draft Content is random symbols | Clear Content, attach a cleaner PDF, or resend email |
+| Auto-fill invents a topic | Extraction was empty — do not publish; resend/OCR |
+| No usage numbers | Use the public site once, then refresh `/admin` |
+| Google login returns to the wrong host | Supabase Site URL / Redirect URLs must include steamco.in |
+| Ingest 401 | `INGEST_SECRET` mismatch |

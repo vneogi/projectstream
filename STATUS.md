@@ -6,95 +6,108 @@ Last updated: 20 October 2026
 
 - Production: [steamco.in](https://steamco.in)
 - Recovery hostname: [projectstream.vercel.app](https://projectstream.vercel.app)
-- Latest parsing fix: `7654c77` — Auto-fill is grounded only in extracted
-  document text and stops when OCR fails instead of inventing content
-- Database: Supabase, with RLS enabled on `posts` and `post_likes`
-- Storage: private `materials` bucket; downloads go through authenticated server routes
+- Latest product commits:
+  - `998c077` — Ask AI source ranking (typos kept, unrelated cards dropped)
+  - `f480115` — grounded Ask AI copy + private Editor usage dashboard
+- Database: Supabase, RLS on `posts`, `post_likes`, and `usage_events`
+- Storage: private `materials` bucket; downloads go through authenticated
+  server routes
 - Login: Google only
-- Analytics: GA4 `G-VJ57TFG135`
-- Email ingest: latest Apps Script installed, with scanned-PDF OCR, binary-text
-  detection, a 4MB upload limit, and no Gmail labels
+- Analytics: GA4 `G-VJ57TFG135` plus first-party `usage_events`
+- Email ingest: Apps Script on `projectsteamcollective@gmail.com` →
+  `https://steamco.in/api/ingest/email`
+- Usage dashboard SQL: **run** (`supabase/usage-analytics.sql`)
+
+Product map: [WEBSITE.md](./WEBSITE.md).
+Security model: [SECURITY.md](./SECURITY.md).
+Privacy handling: [PRIVACY.md](./PRIVACY.md).
 
 ## Completed functionality
 
-- Gmail attachments become drafts; replies and messages without material are skipped
-- PDF, PowerPoint, Word, image, spreadsheet, Google Docs, and Google Slides handling
-- Scanned PDF/image OCR through Google Drive where possible
-- Binary-looking PDF extraction is rejected instead of being pasted into Content
-- Drive OCR/conversion waits and retries before declaring a file unreadable
-- Email metadata and sender details are excluded from public article Content
-- Generated summaries/tags that are not supported by source text are discarded
-- Manual Editor file replacement/upload for edge cases
-- AI title, subject, 6–12 searchable topics, card summary, and abstract
-- File-type/processing tags such as `from-email`, `pdf`, and `needs-review`
-  are excluded
-- New Editor articles can select a file before the first save
-- Published articles update Browse without a redeploy
-- Draft deletion plus status/date filtering and sorting
-- Psychology, Design, Other, and General STEM categories
-- Public abstract pages and signed-in original-file downloads
-- Ask AI grounded in published articles
-- Ask AI consolidates relevant articles with inline title attribution, tolerates
-  common spelling mistakes, and offers same-subject reading when a topic is
-  unpublished
-- Private Editor usage dashboard for page views, active visitors, Search/Ask
-  demand, content gaps, article views, and downloads (run
-  `supabase/usage-analytics.sql` once)
-- Public like button removed (like counts may still exist in the database)
-- Clickable Latest Submissions
+### Library
+
+- Homepage, Browse, subject pages, article pages
+- Search by question, keyword, subject, or topic
+- Psychology, Design, Other, Engineering, and General STEM categories
+- Public abstracts; full notes and original-file downloads after Google login
+- Published articles appear without a redeploy
+- Public like button removed (legacy `like_count` / `post_likes` may remain)
+
+### Ask AI
+
+- Grounded only in published articles
+- Collates multiple sources with inline title attribution
+- Tolerates common spelling mistakes (`intttunet` → Internet article)
+- Unrelated weak matches are not attached as sources
+- Unpublished topics return: *Project STEAM has not yet published articles on
+  this topic. Below are some similar topics for you to explore.*
+- Rate-limited; Groq first (`openai/gpt-oss-20b`), OpenAI optional fallback
+
+### Editor
+
+- Drafts from Gmail; never auto-published
+- Create / edit / publish / unpublish / delete
+- Status and date filtering/sorting
+- File attach or replace, including before the first save
+- Auto-fill title, subject, 6–12 searchable topics, summary, abstract
+- Auto-fill uses extracted document text only and stops when OCR fails
+- Binary-looking PDF dumps are not saved as Content
+- File-type tags (`from-email`, `pdf`, `needs-review`) are excluded
+- Private usage dashboard: questions, searches, views, downloads, gaps
+
+### Ingest
+
+- PDF, PowerPoint, Word, image, spreadsheet, Google Docs, Google Slides
+- Drive OCR for scans, with wait/retry
+- Google Doc IDs recovered from HTML when plain text dropped the URL
+- Replies and empty emails skipped
+- Original files up to 4MB stored privately
+- Email metadata excluded from public Content
+
+### Platform
+
 - Google-only student login
+- Signed Editor cookie; placeholder Admin password rejected on Vercel
+- Security headers, rate limits, ingest secret
 - GA page views plus search, Ask AI, download, and sign-in events
 
-## Security completed in code/database
+## Security and privacy completed
 
-- RLS enabled; browser roles cannot query `posts` or `post_likes`
-- Private Storage bucket with server-generated download links
-- Service-role key used server-side only
-- Signed, expiring Admin cookie tied to `ADMIN_PASSWORD`
-- Default Admin password rejected on Vercel
+See [SECURITY.md](./SECURITY.md) and [PRIVACY.md](./PRIVACY.md). Short list:
+
+- RLS + revoke on posts, likes, and usage events
+- Private Storage; service-role key server-side only
 - Safe same-site redirects after Google login
-- Rate limits on Admin login, Ask AI, ingest, Auto-fill, and Admin uploads
-- Security headers: frame blocking, MIME sniffing protection, restrictive device permissions
-- Ingest endpoint protected by `INGEST_SECRET`
+- No raw IP in usage analytics (keyed visitor hash)
+- HTTPS on steamco.in
 
-## Next: verify the parsing fix
+## Remaining human checks
 
-After Vercel deploys `7654c77`, re-paste `gmail/ProjectSteamIngest.gs` and test
-with a fresh email. Old drafts do not contain missing OCR text and cannot be
-repaired by Auto-fill alone.
+Most of these cannot be finished from code review alone.
 
-- [ ] Sign into `/admin/login` with the current strong `ADMIN_PASSWORD`
-- [ ] Open a draft, run Auto-fill, and confirm the subject and generated tags
-  match the material
-- [ ] Confirm generated tags do not include `from-email`, `pdf`, or
-  `needs-review`
-- [ ] Create a new draft, select a PDF before saving, save it, and confirm the
-  file is attached
-- [ ] Upload a normal text PDF and confirm readable text is used
-- [ ] Upload a scanned/compressed PDF and confirm binary symbols are not added
-  to Content; add a short overview and save successfully
-- [ ] Confirm a file just under 4MB uploads and a file over 4MB gets a clear
-  size error
-- [ ] Sign in with Google as a student
-- [ ] Download one article file
-- [ ] Confirm article pages and cards no longer show likes
-- [ ] Send one new attachment email and confirm a draft appears
-- [ ] Confirm the email-created draft has a sensible subject, searchable tags,
-  no binary Content, and the original file attached
-- [ ] Check the homepage, footer, and About page for the updated worldwide
-  STEAM wording
-- [ ] Confirm GA4 Realtime sees the visit
+- [ ] Sign into `/admin/login` with the current `ADMIN_PASSWORD` and confirm
+  the usage dashboard loads (empty zeros are fine until traffic arrives)
+- [ ] Browse, Search, Ask AI, open an article, then refresh `/admin` and
+  confirm events appear
+- [ ] Ask “how does the intttunet wrk” → only *How the Internet Works*
+- [ ] Ask a topic with no article → the unpublished-topic sentence
+- [ ] Ask a topic covered by several biology notes → collated answer with
+  inline titles
+- [ ] Open a Gmail draft, run Auto-fill, confirm tags match the material and
+  omit `from-email` / `pdf` / `needs-review`
+- [ ] Send one new attachment email and confirm a clean draft + original file
+- [ ] Sign in with Google as a student and download one file
+- [ ] Confirm GA4 Realtime sees a visit
 
-Security and privacy follow-up is tracked in
-[SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
+Follow-up items (www TLS, Privacy/Terms pages, OAuth publish, retention) are
+tracked in [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
 
-## Optional, not blocking the domain
+## Optional, not blocking the site
 
-- Supabase custom Auth domain (`auth.steamco.in`) to replace the visible
-  `….supabase.co` hostname on Google's first screen; this requires an eligible
-  paid Supabase plan.
-- Remove `OPENAI_API_KEY` from Vercel if it is still the invalid `gsk_…` value.
-  Groq is the configured primary provider and works without OpenAI.
-- Render Markdown in Ask AI answers if literal `**bold**` markers become
-  distracting; answers work today, this is presentation-only.
-- Add Terms and Privacy pages before broad public promotion.
+- Supabase custom Auth domain (`auth.steamco.in`) to hide `….supabase.co` on
+  Google’s first screen (paid plan)
+- Remove `OPENAI_API_KEY` from Vercel if it is still a Groq `gsk_…` value
+- Render Markdown in Ask AI answers if `**bold**` markers are distracting
+- Add Terms and Privacy pages before broad public promotion
+- Set `ANALYTICS_HASH_SALT` so visitor hashes do not rotate when admin/ingest
+  secrets change
