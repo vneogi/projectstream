@@ -51,6 +51,20 @@ const STOP_WORDS = new Set([
   "your",
 ]);
 
+const WEAK_ASK_TOKENS = new Set([
+  "project",
+  "projects",
+  "steam",
+  "website",
+  "online",
+  "page",
+]);
+
+/** Tokens that can ground an Ask AI answer in a library topic. */
+export function askTopicTokens(query: string): string[] {
+  return questionTokens(query).filter((token) => !WEAK_ASK_TOKENS.has(token));
+}
+
 export function questionTokens(query: string): string[] {
   const seen = new Set<string>();
   const tokens: string[] = [];

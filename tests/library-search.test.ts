@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  askTopicTokens,
   questionTokens,
   rankPostsForQuery,
 } from "../src/lib/library-search.ts";
@@ -11,6 +12,11 @@ describe("questionTokens", () => {
   it("drops stop words and punctuation from a real student question", () => {
     const tokens = questionTokens("How do I balance chemical equations?");
     assert.deepEqual(tokens, ["balance", "chemical", "equations"]);
+  });
+
+  it("does not treat site-how-to wording as a library topic", () => {
+    assert.deepEqual(askTopicTokens("how to use project steam website?"), []);
+    assert.ok(askTopicTokens("How do I balance chemical equations?").includes("equations"));
   });
 });
 
