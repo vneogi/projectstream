@@ -149,7 +149,7 @@ export function rankPostsForAsk(posts: Post[], query: string): Post[] {
   const tokens = askTopicTokens(query);
   if (tokens.length === 0) return [];
 
-  return posts
+  const ranked = posts
     .map((post) => {
       const title = post.title.toLowerCase();
       const topics = post.topics.join(" ").toLowerCase();
@@ -167,8 +167,15 @@ export function rankPostsForAsk(posts: Post[], query: string): Post[] {
       }
       return { post, score };
     })
-    .filter(({ score }) => score >= 2)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score);
+  const bestScore = ranked[0]?.score ?? 0;
+  if (bestScore < 2) return [];
+
+  // A fuzzy token is enough to rescue a lone typo, but once a strong result
+  // exists, discard weak fuzzy coincidences from unrelated articles.
+  const cutoff = bestScore >= 3 ? Math.max(3, bestScore * 0.5) : 2;
+  return ranked
+    .filter(({ score }) => score >= cutoff)
     .map(({ post }) => post);
 }
 

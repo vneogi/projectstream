@@ -90,8 +90,23 @@ describe("rankPostsForQuery", () => {
       subjectName: "Computer Science",
       topics: ["internet", "networks", "routers"],
     };
-    const ranked = rankPostsForAsk([internet], "how does the intttunet wrk");
+    const unrelated: Post = {
+      ...internet,
+      id: "budget",
+      title: "Student Budgeting Worksheet",
+      slug: "student-budget",
+      excerpt: "Students practise the 50-30-20 budgeting rule.",
+      abstract: "A worksheet about income, saving, and spending decisions.",
+      subjectSlug: "mathematics",
+      subjectName: "Mathematics",
+      topics: ["budget", "money"],
+    };
+    const ranked = rankPostsForAsk(
+      [unrelated, internet],
+      "how does the intttunet wrk",
+    );
     assert.equal(ranked[0]?.slug, internet.slug);
+    assert.deepEqual(ranked.map((post) => post.slug), [internet.slug]);
   });
 
   it("suggests same-subject articles when an exact topic is unpublished", () => {
