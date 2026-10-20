@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminPostTable } from "@/components/AdminPostTable";
 import { Icon } from "@/components/Icon";
+import { UsageDashboard } from "@/components/UsageDashboard";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { hasDatabase, listAllPosts } from "@/lib/data";
+import { getUsageDashboard } from "@/lib/usage";
 
 export const metadata = {
   title: "Admin",
@@ -13,7 +15,10 @@ export default async function AdminPage() {
   const authed = await isAdminAuthenticated();
   if (!authed) redirect("/admin/login");
 
-  const posts = await listAllPosts();
+  const [posts, usage] = await Promise.all([
+    listAllPosts(),
+    getUsageDashboard(30),
+  ]);
   const published = posts.filter((p) => p.status === "published").length;
   const drafts = posts.filter((p) => p.status === "draft");
   const emailDrafts = drafts.filter((p) => Boolean(p.sourceMessageId));
@@ -64,6 +69,8 @@ export default async function AdminPage() {
             </p>
           </div>
         )}
+
+        <UsageDashboard data={usage} />
 
         {posts.length === 0 ? (
           <div className="empty-state">

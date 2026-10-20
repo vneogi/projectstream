@@ -62,6 +62,36 @@ alter table post_likes enable row level security;
 revoke all on table posts from anon, authenticated;
 revoke all on table post_likes from anon, authenticated;
 
+-- First-party usage analytics for the private Editor dashboard.
+-- Raw IP addresses are never stored; the server writes a keyed visitor hash.
+create table if not exists usage_events (
+  id bigint generated always as identity primary key,
+  event_type text not null check (
+    event_type in ('page_view', 'search', 'ask', 'article_view', 'download')
+  ),
+  query_text text,
+  post_id uuid references posts(id) on delete set null,
+  user_id uuid,
+  visitor_hash text,
+  result_count integer,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists usage_events_created_idx
+  on usage_events (created_at desc);
+create index if not exists usage_events_type_created_idx
+  on usage_events (event_type, created_at desc);
+create index if not exists usage_events_post_created_idx
+  on usage_events (post_id, created_at desc)
+  where post_id is not null;
+
+alter table usage_events enable row level security;
+revoke all on table usage_events from anon, authenticated;
+
+-- Optional periodic retention cleanup (run manually or from a scheduled job):
+-- delete from usage_events where created_at < now() - interval '180 days';
+
 create index if not exists posts_search_idx on posts
   using gin (to_tsvector('english', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content,'')));
 

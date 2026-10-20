@@ -24,8 +24,9 @@ Do not mark an item complete without testing it on the live domain.
   record and use only `steamco.in`.
 - [ ] Add `/privacy` and `/terms` pages and link them in the footer. They should
   explain Google sign-in, Google Analytics, submitted email/files, AI
-  processing, review before publication, retention/removal requests, and the
-  project contact address.
+  processing, first-party usage analytics (including stored Search/Ask text and
+  pseudonymous visitor hashes), review before publication, retention/removal
+  requests, and the project contact address.
 - [ ] Confirm the Google OAuth consent screen is Published rather than Testing
   before inviting users who are not test accounts.
 - [ ] Confirm 2-Step Verification is enabled on the Google, Vercel, Supabase,
@@ -51,6 +52,8 @@ Do not mark an item complete without testing it on the live domain.
 - [ ] Decide a retention/removal process for source emails, Supabase drafts,
   stored files, and Google account data. Publish a simple contact-based
   deletion request process.
+- [ ] Confirm the retention period for `usage_events` (180 days is suggested)
+  and schedule or periodically run the cleanup SQL.
 - [ ] Remove legacy public like data/API if likes will not return. The UI is
   gone, but `likeCount`, the like route, and the `post_likes` table remain.
 - [ ] Add `robots.txt` and basic sitemap metadata. `robots.txt` currently

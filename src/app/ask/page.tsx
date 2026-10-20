@@ -16,6 +16,7 @@ export default function AskPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState<Source[]>([]);
+  const [suggested, setSuggested] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,6 +26,7 @@ export default function AskPage() {
     setError("");
     setAnswer("");
     setSources([]);
+    setSuggested(false);
 
     try {
       const res = await fetch("/api/ask", {
@@ -36,6 +38,7 @@ export default function AskPage() {
       if (!res.ok) throw new Error(data.error ?? "Request failed");
       setAnswer(data.answer);
       setSources(data.sources ?? []);
+      setSuggested(Boolean(data.suggested));
       trackEvent("ask_ai", { question_length: question.trim().length });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -97,7 +100,9 @@ export default function AskPage() {
 
             {sources.length > 0 && (
               <div style={{ marginTop: "28px" }}>
-                <p className="footer__nav-title">Sources</p>
+                <p className="footer__nav-title">
+                  {suggested ? "Similar topics" : "Sources"}
+                </p>
                 <div className="card-grid" style={{ marginTop: "12px" }}>
                   {sources.map((s) => (
                     <Link key={s.slug} href={`/posts/${s.slug}`} className="card">

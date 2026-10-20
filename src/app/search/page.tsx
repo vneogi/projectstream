@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { PostCard } from "@/components/PostCard";
 import { SearchBar } from "@/components/SearchBar";
 import { searchPublishedPosts } from "@/lib/data";
+import { recordUsageEventFromHeaders } from "@/lib/usage";
 
 export const metadata = {
   title: "Search",
@@ -15,6 +17,14 @@ export default async function SearchPage({
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
   const results = query ? await searchPublishedPosts(query) : [];
+
+  if (query) {
+    await recordUsageEventFromHeaders(await headers(), {
+      eventType: "search",
+      queryText: query,
+      resultCount: results.length,
+    });
+  }
 
   return (
     <section className="section section--tight">

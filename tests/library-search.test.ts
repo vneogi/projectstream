@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   askTopicTokens,
   questionTokens,
+  rankPostsForAsk,
   rankPostsForQuery,
+  suggestPostsForQuery,
 } from "../src/lib/library-search.ts";
 import { searchPosts } from "../src/lib/seed-data.ts";
 import type { Post } from "../src/lib/types.ts";
@@ -71,5 +73,31 @@ describe("rankPostsForQuery", () => {
     };
     const ranked = rankPostsForQuery([unliked, liked], "photosynthesis");
     assert.equal(ranked[0].slug, "clear-photo");
+  });
+
+  it("finds a relevant article despite student spelling mistakes", () => {
+    const seed = searchPosts("")[0];
+    assert.ok(seed);
+    const internet: Post = {
+      ...seed,
+      id: "internet",
+      title: "How the Internet Works",
+      slug: "how-the-internet-works",
+      excerpt: "Routers and networks move packets between connected devices.",
+      abstract: "The internet links devices through routers, DNS, and servers.",
+      content: "Internet data travels in packets.",
+      subjectSlug: "computer-science",
+      subjectName: "Computer Science",
+      topics: ["internet", "networks", "routers"],
+    };
+    const ranked = rankPostsForAsk([internet], "how does the intttunet wrk");
+    assert.equal(ranked[0]?.slug, internet.slug);
+  });
+
+  it("suggests same-subject articles when an exact topic is unpublished", () => {
+    const biology = searchPosts("").filter((post) => post.subjectSlug === "biology");
+    const suggestions = suggestPostsForQuery(biology, "How does photosynthesis work?");
+    assert.ok(suggestions.length > 0);
+    assert.ok(suggestions.every((post) => post.subjectSlug === "biology"));
   });
 });

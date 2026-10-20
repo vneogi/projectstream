@@ -141,7 +141,28 @@ Requires `GROQ_API_KEY` or `OPENAI_API_KEY` (same as Ask AI).
 
 ---
 
-## 9) Next: smoke-test, then steamco.in
+## 9) Private Editor usage dashboard
+
+Run [`supabase/usage-analytics.sql`](./supabase/usage-analytics.sql) once in the
+Supabase SQL Editor. The Admin dashboard then reports:
+
+- page views and active visitors
+- signed-in active users
+- Search and Ask AI questions
+- unanswered questions and zero-result searches (content opportunities)
+- most viewed and downloaded articles
+- most visited pages and daily activity
+
+Only the service-role server can access `usage_events`; browser roles are
+revoked and RLS has no public policy. Raw IP addresses are never stored. The
+server stores a keyed one-way visitor hash so unique activity can be estimated.
+Search terms and Ask AI questions are retained because the Editor explicitly
+needs to understand content demand. Use the documented 180-day cleanup query
+unless a different retention period is chosen in the Privacy policy.
+
+---
+
+## 10) Next: smoke-test, then steamco.in
 
 Security code (signed Admin cookie, safe redirects, rate limits, headers) and
 database RLS are deployed. Auto-fill was retested after the token-limit fix.

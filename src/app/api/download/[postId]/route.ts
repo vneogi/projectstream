@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { getPostById } from "@/lib/data";
 import { getSessionUser } from "@/lib/supabase/server";
 import { getSupabaseAdmin, MATERIALS_BUCKET } from "@/lib/supabase/admin";
+import { recordUsageEvent } from "@/lib/usage";
 
 /**
  * Authenticated download of the original PDF/PPTX.
  * Anonymous users get 401 → client sends them to /auth/login.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ postId: string }> },
 ) {
   const user = await getSessionUser();
@@ -49,5 +50,11 @@ export async function GET(
     return NextResponse.json({ error: "Could not create download link" }, { status: 500 });
   }
 
+  await recordUsageEvent(request, {
+    eventType: "download",
+    postId,
+    userId: user.id,
+    resultCount: 1,
+  });
   return NextResponse.redirect(data.signedUrl);
 }

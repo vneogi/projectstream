@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { searchPublishedPosts } from "@/lib/data";
+import { listPublishedPosts } from "@/lib/data";
 import { limitOrRespond } from "@/lib/http-limit";
-import { askTopicTokens } from "@/lib/library-search";
+import {
+  rankPostsForAsk,
+  suggestPostsForQuery,
+} from "@/lib/library-search";
 import { chatCompletionDetailed, llmConfigured } from "@/lib/llm";
 import type { Post } from "@/lib/types";
+import { recordUsageEvent } from "@/lib/usage";
 
 function sourceCard(p: Post) {
   return {
@@ -14,7 +18,7 @@ function sourceCard(p: Post) {
 }
 
 const NO_MATCH_ANSWER =
-  "I can only answer from published Project STEAM articles. The library does not have an article that explains that yet. Try Browse or Search for a topic such as photosynthesis, DNA, or a quiz title, or open Share your work if you want to contribute notes.";
+  "Project STEAM has not yet published articles on this topic. Below are some similar topics for you to explore.";
 
 function fallbackAnswer(posts: Post[]): string {
   const body = posts
@@ -45,16 +49,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Question is required" }, { status: 400 });
   }
 
-  const matched = await searchPublishedPosts(q);
-  const topicTokens = askTopicTokens(q);
-  const topSources =
-    topicTokens.length === 0 ? [] : matched.slice(0, 4);
+  const published = await listPublishedPosts();
+  const topSources = rankPostsForAsk(published, q).slice(0, 4);
 
   if (topSources.length === 0) {
+    const suggestions = suggestPostsForQuery(published, q);
+    await recordUsageEvent(request, {
+      eventType: "ask",
+      queryText: q,
+      resultCount: 0,
+      metadata: { suggestion_count: suggestions.length },
+    });
     return NextResponse.json({
       answer: NO_MATCH_ANSWER,
-      sources: [],
+      sources: suggestions.map(sourceCard),
       provider: null,
+      suggested: true,
     });
   }
 
@@ -71,7 +81,7 @@ export async function POST(request: Request) {
         {
           role: "system",
           content:
-            "You are a STEAM tutor who may use ONLY the provided Project STEAM library articles. Write 2–4 short paragraphs in simple language. Do not invent website menus, URLs, buttons, or how-to steps that the articles do not state. If the articles do not answer the question, say so in one or two sentences and do not guess. End with a short line listing only the source titles you actually used.",
+            "You are an intelligent, grounded STEAM tutor. Collate and consolidate useful knowledge across ALL relevant provided Project STEAM articles. Use ONLY facts present in those articles. Explain connections or differences between sources when helpful. Attribute facts inline with natural wording such as: In “Article Title,” we explore... or “Article Title” explains.... Do not invent website menus, URLs, buttons, facts, or how-to steps. If the provided articles do not actually answer the question, say: Project STEAM has not yet published articles on this topic. Do not add a separate Sources used list because source cards appear below.",
         },
         {
           role: "user",
@@ -82,19 +92,33 @@ export async function POST(request: Request) {
     );
 
     if (outcome.ok) {
+      await recordUsageEvent(request, {
+        eventType: "ask",
+        queryText: q,
+        resultCount: topSources.length,
+        metadata: { provider: outcome.provider },
+      });
       return NextResponse.json({
         answer: outcome.content,
         provider: outcome.provider,
         sources: topSources.map(sourceCard),
+        suggested: false,
       });
     }
 
     console.error("Ask AI LLM failed:", outcome.errors.join(" | "));
   }
 
+  await recordUsageEvent(request, {
+    eventType: "ask",
+    queryText: q,
+    resultCount: topSources.length,
+    metadata: { provider: "fallback" },
+  });
   return NextResponse.json({
     answer: fallbackAnswer(topSources),
     provider: null,
     sources: topSources.map(sourceCard),
+    suggested: false,
   });
 }

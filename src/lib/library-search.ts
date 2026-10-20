@@ -96,6 +96,123 @@ function haystack(post: Post): string {
     .toLowerCase();
 }
 
+function publicHaystack(post: Post): string {
+  return [
+    post.title,
+    post.excerpt,
+    post.abstract ?? "",
+    post.subjectName,
+    post.subjectSlug,
+    ...post.topics,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function words(text: string): string[] {
+  return text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
+}
+
+function editDistance(a: string, b: string): number {
+  const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let diagonal = previous[0];
+    previous[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const above = previous[j];
+      previous[j] = Math.min(
+        previous[j] + 1,
+        previous[j - 1] + 1,
+        diagonal + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      diagonal = above;
+    }
+  }
+  return previous[b.length];
+}
+
+function fuzzyMatch(token: string, candidates: string[]): boolean {
+  const limit = token.length >= 8 ? 3 : token.length >= 5 ? 2 : 1;
+  return candidates.some(
+    (candidate) =>
+      Math.abs(candidate.length - token.length) <= limit &&
+      editDistance(token, candidate) <= limit,
+  );
+}
+
+/**
+ * Ask AI uses stricter public metadata than general Search. This avoids
+ * grounding an answer in old malformed article bodies while still tolerating
+ * student spelling mistakes such as "intttunet wrk".
+ */
+export function rankPostsForAsk(posts: Post[], query: string): Post[] {
+  const tokens = askTopicTokens(query);
+  if (tokens.length === 0) return [];
+
+  return posts
+    .map((post) => {
+      const title = post.title.toLowerCase();
+      const topics = post.topics.join(" ").toLowerCase();
+      const summary = `${post.excerpt} ${post.abstract ?? ""}`.toLowerCase();
+      const subject = `${post.subjectName} ${post.subjectSlug}`.toLowerCase();
+      const candidates = words(publicHaystack(post));
+      let score = 0;
+
+      for (const token of tokens) {
+        if (title.includes(token)) score += 6;
+        else if (topics.includes(token)) score += 5;
+        else if (summary.includes(token)) score += 3;
+        else if (subject.includes(token)) score += 2;
+        else if (fuzzyMatch(token, candidates)) score += 2;
+      }
+      return { post, score };
+    })
+    .filter(({ score }) => score >= 2)
+    .sort((a, b) => b.score - a.score)
+    .map(({ post }) => post);
+}
+
+const QUERY_SUBJECTS: Array<{ slug: string; terms: string[] }> = [
+  {
+    slug: "biology",
+    terms: ["photosynthesis", "plant", "cell", "dna", "biology", "genetic"],
+  },
+  {
+    slug: "physics",
+    terms: ["physics", "force", "motion", "electric", "light", "gravity"],
+  },
+  {
+    slug: "chemistry",
+    terms: ["chemistry", "chemical", "reaction", "atom", "molecule", "acid"],
+  },
+  {
+    slug: "mathematics",
+    terms: ["math", "algebra", "geometry", "equation", "calculus"],
+  },
+  {
+    slug: "computer-science",
+    terms: ["internet", "computer", "coding", "algorithm", "artificial intelligence"],
+  },
+  {
+    slug: "psychology",
+    terms: ["psychology", "brain", "mental", "emotion", "behaviour", "behavior"],
+  },
+  {
+    slug: "design",
+    terms: ["design", "poster", "visual", "typography"],
+  },
+];
+
+/** Pick same-subject articles when the exact requested topic is unpublished. */
+export function suggestPostsForQuery(posts: Post[], query: string): Post[] {
+  const lower = query.toLowerCase();
+  const subject = QUERY_SUBJECTS.find((entry) =>
+    entry.terms.some((term) => lower.includes(term)),
+  );
+  if (!subject) return [];
+  return posts.filter((post) => post.subjectSlug === subject.slug).slice(0, 4);
+}
+
 /** Rank published posts for a student question or search box query. */
 export function rankPostsForQuery(posts: Post[], query: string): Post[] {
   const phrase = query.trim().toLowerCase();

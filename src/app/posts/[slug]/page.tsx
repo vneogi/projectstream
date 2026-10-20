@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/Icon";
+import { ArticleViewTracker } from "@/components/ArticleViewTracker";
 import { MaterialAccess } from "@/components/MaterialAccess";
 import { getPost, listPublishedPosts } from "@/lib/data";
 import { getSessionUser } from "@/lib/supabase/server";
@@ -43,6 +44,7 @@ export default async function PostPage({
     <section className="section section--tight">
       <div className="page-glow" />
       <div className="container container--narrow">
+        <ArticleViewTracker postId={post.id} />
         <article>
           <header className="article__header">
             <Link href={`/subjects/${post.subjectSlug}`} className="card__eyebrow">

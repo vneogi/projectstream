@@ -11,9 +11,18 @@ function GaPageViews() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!GA_ID) return;
     const query = searchParams.toString();
     const page_path = query ? `${pathname}?${query}` : pathname;
+    void fetch("/api/usage/page-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: page_path }),
+      keepalive: true,
+    }).catch(() => {
+      // First-party analytics must never interfere with navigation.
+    });
+
+    if (!GA_ID) return;
     const gtag = (
       window as unknown as {
         gtag?: (
@@ -30,17 +39,19 @@ function GaPageViews() {
 }
 
 export function GoogleAnalytics() {
-  if (!GA_ID) return null;
-
   return (
     <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="ga4" strategy="afterInteractive">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}',{anonymize_ip:true});`}
-      </Script>
+      {GA_ID ? (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga4" strategy="afterInteractive">
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}',{anonymize_ip:true});`}
+          </Script>
+        </>
+      ) : null}
       <Suspense fallback={null}>
         <GaPageViews />
       </Suspense>

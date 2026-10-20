@@ -1,6 +1,6 @@
 # Project STEAM — current status
 
-Last updated: 18 October 2026
+Last updated: 20 October 2026
 
 ## Live now
 
@@ -34,6 +34,12 @@ Last updated: 18 October 2026
 - Psychology, Design, Other, and General STEM categories
 - Public abstract pages and signed-in original-file downloads
 - Ask AI grounded in published articles
+- Ask AI consolidates relevant articles with inline title attribution, tolerates
+  common spelling mistakes, and offers same-subject reading when a topic is
+  unpublished
+- Private Editor usage dashboard for page views, active visitors, Search/Ask
+  demand, content gaps, article views, and downloads (run
+  `supabase/usage-analytics.sql` once)
 - Public like button removed (like counts may still exist in the database)
 - Clickable Latest Submissions
 - Google-only student login
