@@ -74,9 +74,9 @@ Answers a student question using **published** library articles only.
   and may list same-subject suggestions.
 - Does not invent website how-tos, URLs, or facts that are not in the sources.
 
-Ask AI is public. It currently grounds answers from article summaries plus a
-capped excerpt of the stored notes. See [PRIVACY.md](./PRIVACY.md) for the
-open decision about login-only notes vs public Ask answers.
+Ask AI is public. It grounds answers from public article abstracts, summaries,
+titles, subjects, and topics. Protected full-note text is not sent to the Ask
+AI answer provider.
 
 ### Share your work (`/submit`)
 
@@ -90,6 +90,12 @@ name, email, or phone in the article text.
 
 Explains why the project exists: student-shared STEAM knowledge that should
 not depend on school or location.
+
+### Privacy (`/privacy`) and Terms (`/terms`)
+
+Explain data handling, Google sign-in, analytics, AI processing, submission
+rights, educational limitations, and how to request correction/removal. Both
+are linked in the public footer.
 
 ### Sign in (`/auth/login`)
 
@@ -158,6 +164,12 @@ suggestions rather than matches.
 The site records `page_view`, `search`, `ask`, `article_view`, and `download`
 events for the Editor dashboard. Raw IP addresses are not stored. See
 [PRIVACY.md](./PRIVACY.md).
+
+### Search-engine metadata
+
+`/robots.txt` permits public pages while excluding `/admin`, `/api`, and
+`/auth`. `/sitemap.xml` lists public static pages, subjects, and all published
+articles.
 
 ## What students should expect
 

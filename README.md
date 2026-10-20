@@ -128,7 +128,8 @@ is edited in `/admin`.
 
 ## License
 
-Content is community-submitted for education. Public Terms and Privacy pages
-are still a pre-promotion task; see
+Content is community-submitted for education. Public
+[Privacy](https://steamco.in/privacy) and
+[Terms](https://steamco.in/terms) pages are available on the site. Internal
+handling is documented in [PRIVACY.md](./PRIVACY.md), and remaining work is in
 [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
- Internal handling is documented in [PRIVACY.md](./PRIVACY.md).

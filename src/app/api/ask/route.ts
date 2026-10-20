@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { listPublishedPosts } from "@/lib/data";
 import { limitOrRespond } from "@/lib/http-limit";
 import {
+  publicAskContext,
   rankPostsForAsk,
   suggestPostsForQuery,
 } from "@/lib/library-search";
@@ -24,7 +25,7 @@ function fallbackAnswer(posts: Post[]): string {
   const body = posts
     .slice(0, 2)
     .map((p) => {
-      const detail = (p.abstract || p.excerpt || p.content).slice(0, 700).trim();
+      const detail = (p.abstract || p.excerpt).slice(0, 700).trim();
       return `${p.title}\n${detail}`;
     })
     .join("\n\n");
@@ -69,10 +70,7 @@ export async function POST(request: Request) {
   }
 
   const contextBlock = topSources
-    .map((p, i) => {
-      const summary = p.abstract || p.excerpt;
-      return `[${i + 1}] ${p.title}\nSubject: ${p.subjectName}\nSummary: ${summary}\n${p.content.slice(0, 1200)}`;
-    })
+    .map(publicAskContext)
     .join("\n\n---\n\n");
 
   if (llmConfigured()) {
@@ -81,7 +79,7 @@ export async function POST(request: Request) {
         {
           role: "system",
           content:
-            "You are an intelligent, grounded STEAM tutor. Collate and consolidate useful knowledge across ALL relevant provided Project STEAM articles. Use ONLY facts present in those articles. Explain connections or differences between sources when helpful. Attribute facts inline with natural wording such as: In “Article Title,” we explore... or “Article Title” explains.... Do not invent website menus, URLs, buttons, facts, or how-to steps. If the provided articles do not actually answer the question, say: Project STEAM has not yet published articles on this topic. Do not add a separate Sources used list because source cards appear below.",
+            "You are an intelligent, grounded STEAM tutor. Collate and consolidate useful knowledge across ALL relevant provided Project STEAM articles. You receive only public article metadata, summaries, and abstracts; use ONLY facts present in those fields. Explain connections or differences between sources when helpful. Attribute facts inline with natural wording such as: In “Article Title,” we explore... or “Article Title” explains.... Do not invent website menus, URLs, buttons, facts, or how-to steps. If the provided articles do not actually answer the question, say: Project STEAM has not yet published articles on this topic. Do not add a separate Sources used list because source cards appear below.",
         },
         {
           role: "user",

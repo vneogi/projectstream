@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   askTopicTokens,
+  publicAskContext,
   questionTokens,
   rankPostsForAsk,
   rankPostsForQuery,
@@ -114,5 +115,19 @@ describe("rankPostsForQuery", () => {
     const suggestions = suggestPostsForQuery(biology, "How does photosynthesis work?");
     assert.ok(suggestions.length > 0);
     assert.ok(suggestions.every((post) => post.subjectSlug === "biology"));
+  });
+
+  it("builds Ask AI context without protected full notes", () => {
+    const post = searchPosts("")[0];
+    assert.ok(post);
+    const privateMarker = "PRIVATE-FULL-NOTES-MARKER";
+    const context = publicAskContext(
+      { ...post, content: privateMarker },
+      0,
+    );
+    assert.match(context, new RegExp(post.title));
+    assert.match(context, /Summary:/);
+    assert.match(context, /Abstract:/);
+    assert.doesNotMatch(context, new RegExp(privateMarker));
   });
 });

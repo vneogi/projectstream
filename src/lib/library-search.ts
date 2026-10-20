@@ -100,6 +100,17 @@ function words(text: string): string[] {
   return text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
 }
 
+/** Public fields that Ask AI may send to an external model. */
+export function publicAskContext(post: Post, index: number): string {
+  return [
+    `[${index + 1}] ${post.title}`,
+    `Subject: ${post.subjectName}`,
+    `Topics: ${post.topics.join(", ") || "None listed"}`,
+    `Summary: ${post.excerpt}`,
+    `Abstract: ${post.abstract || post.excerpt}`,
+  ].join("\n");
+}
+
 function editDistance(a: string, b: string): number {
   const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {

@@ -21,7 +21,6 @@ Accept for now (tracked in the backlog):
 
 - No Content Security Policy yet
 - In-memory rate limits (not shared across all serverless instances)
-- Public Ask AI may paraphrase stored notes (privacy decision still open)
 - `www.steamco.in` TLS coverage still needs a registrar/Vercel fix
 
 ## Public vs protected
@@ -123,6 +122,7 @@ not deployed yet.
 - Auto-fill discards generated claims and tags that are not supported by the
   source extract.
 - Ask AI only ranks **published** posts, prefers public metadata for matching,
+  sends only public title/topic/summary/abstract fields to the answer provider,
   and refuses to invent website menus or how-to steps.
 - Weak fuzzy matches are dropped so unrelated articles do not become sources.
 

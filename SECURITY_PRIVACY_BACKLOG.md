@@ -26,9 +26,13 @@ Implemented model: [SECURITY.md](./SECURITY.md) and [PRIVACY.md](./PRIVACY.md).
   stored Search/Ask text for Editors only
 - Ask AI no longer invents website how-tos; unpublished topics use a fixed
   sentence plus optional similar-topic cards
+- Ask AI sends only public article metadata, summaries, and abstracts to the
+  answer provider; protected full notes remain behind Google sign-in
 - Auto-fill grounded in extracted document text; OCR failure does not invent
   copy
 - Email metadata excluded from article Content
+- Public `/privacy` and `/terms` pages linked in the footer
+- Dynamic `/robots.txt` and `/sitemap.xml`; Editor login removed from footer
 
 ## Priority 1 — before broad promotion
 
@@ -36,12 +40,6 @@ Implemented model: [SECURITY.md](./SECURITY.md) and [PRIVACY.md](./PRIVACY.md).
   certificate does not cover the hostname. Either add `www.steamco.in` as a
   Vercel domain with Vercel’s requested CNAME, or remove the GoDaddy `www`
   record and use only `steamco.in`.
-- [ ] Add `/privacy` and `/terms` pages and link them in the footer. They should
-  explain Google sign-in, Google Analytics, submitted email/files, AI
-  processing, first-party usage analytics (including stored Search/Ask text and
-  pseudonymous visitor hashes), review before publication, retention/removal
-  requests, and the project contact address. Draft of the facts:
-  [PRIVACY.md](./PRIVACY.md).
 - [ ] Confirm the Google OAuth consent screen is Published rather than Testing
   before inviting users who are not test accounts.
 - [ ] Confirm 2-Step Verification is enabled on the Google, Vercel, Supabase,
@@ -55,24 +53,15 @@ Implemented model: [SECURITY.md](./SECURITY.md) and [PRIVACY.md](./PRIVACY.md).
 
 ## Priority 2 — privacy/product decisions
 
-- [ ] Decide whether Ask AI may use protected full-note text. Article pages
-  require login for full notes, but the public Ask API currently sends excerpts
-  of article content to Groq and may paraphrase them in public answers. If
-  notes must be strictly login-only, ground Ask AI only from public
-  abstracts/excerpts or require login for Ask AI.
-- [ ] Document Groq (and OpenAI if enabled) as subprocessors in the Privacy
-  page.
-- [ ] Decide a retention/removal process for source emails, Supabase drafts,
-  stored files, and Google account data. Publish a simple contact-based
-  deletion request process.
+- [ ] Choose fixed retention periods for source emails, unpublished drafts,
+  stored files, and inactive Google account data. The public pages now provide
+  an email-based correction/removal request process.
 - [ ] Confirm the retention period for `usage_events` (180 days is suggested)
   and schedule or periodically run the cleanup SQL.
 - [ ] Optionally set `ANALYTICS_HASH_SALT` so visitor hashes stay stable when
   other secrets rotate.
 - [ ] Remove legacy public like data/API if likes will not return. The UI is
   gone, but `likeCount`, the like route, and the `post_likes` table remain.
-- [ ] Add `robots.txt` and basic sitemap metadata. `robots.txt` currently
-  returns 404; this is not a security control.
 
 ## Priority 3 — defense in depth
 

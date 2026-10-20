@@ -28,7 +28,8 @@ export function SiteFooter() {
             <p className="footer__nav-title">Community</p>
             <Link href="/submit">Share your work</Link>
             <Link href="/about">About</Link>
-            <Link href="/admin">Editor login</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
           </div>
 
           <div className="footer__nav">

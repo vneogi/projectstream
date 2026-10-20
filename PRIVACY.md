@@ -3,8 +3,9 @@
 Last updated: 20 October 2026
 
 This is the **internal** record of what Project STEAM collects and why. It is
-not a public Privacy Policy. The public `/privacy` and `/terms` pages are still
-outstanding; see [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
+not a substitute for the public pages now live at `/privacy` and `/terms`.
+Remaining operational decisions are tracked in
+[SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
 
 ## Principles already in the product
 
@@ -21,7 +22,7 @@ outstanding; see [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
 | Data | Where | Why | Who can see it |
 |------|-------|-----|----------------|
 | Published title, summary, abstract, topics | Supabase `posts` | Library cards and Search | Public site |
-| Full notes | `posts.content` | Signed-in reading and (today) Ask AI grounding | Signed-in students; Editor; Ask AI provider when a question matches |
+| Full notes | `posts.content` | Signed-in reading | Signed-in students; Editor |
 | Original files | Private `materials` bucket | Download after login | Signed-in students via signed URL; Editor |
 | Source Gmail message id / sender | `posts.source_*` | Deduping ingest | Editor / server only |
 | Google user id (Auth) | Supabase Auth | Session, downloads | Server; not shown on articles |
@@ -69,12 +70,13 @@ Extracted educational text is sent to **Groq** (primary) and optionally
 **OpenAI** for:
 
 - Auto-fill of title, subject, topics, summary, and abstract
-- Ask AI answers
+- Ask AI answers, using public article titles, subjects, topics, summaries, and
+  abstracts only
 
 Do not send personal identifiers in notes. Auto-fill is grounded only in
 extracted attachment text, not the surrounding email.
 
-These vendors must be listed as subprocessors on the future public Privacy page.
+These vendors are disclosed on the public Privacy page.
 
 ## Google sign-in
 
@@ -93,23 +95,19 @@ message is marked read after ingest. The website stores extracted text, a
 source message id, and the original file when it is under 4MB. Replies are not
 ingested.
 
-There is not yet a published deletion-request process. Until one exists,
-removal is manual: delete the draft/article in `/admin` and remove the file
-from Storage if needed.
+The public Privacy and Terms pages direct correction/removal requests to
+`projectsteamcollective@gmail.com`. Fulfilment is manual: delete the
+draft/article in `/admin`, remove the file from Storage if needed, and remove
+the source email where appropriate.
 
 ## Open privacy decisions
 
 These are implemented as-is and flagged in the backlog:
 
-1. **Ask AI vs login-only notes.** Article pages hide full notes until login,
-   but Ask AI may still send a capped excerpt of stored content to Groq and
-   paraphrase it in a public answer. Alternatives: ground Ask AI only on
-   abstracts/excerpts, or require login for Ask AI.
-2. **Public Privacy / Terms pages** are not live.
-3. **`usage_events` query text** is stored because the Editor asked to see
-   real Search and Ask questions. Confirm this in the public policy.
-4. **Retention** for emails, drafts, files, Google accounts, and usage events
-   is not yet a published contact-based process.
+1. **Retention automation.** The public page states a 180-day aim for usage
+   events, but cleanup remains a manual SQL operation until scheduling exists.
+2. **Broader retention.** Drafts, source emails, files, and Google account data
+   do not yet have fixed deletion periods; requests are handled by email.
 
 ## What is not collected
 

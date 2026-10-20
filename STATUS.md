@@ -70,6 +70,10 @@ Privacy handling: [PRIVACY.md](./PRIVACY.md).
 - Signed Editor cookie; placeholder Admin password rejected on Vercel
 - Security headers, rate limits, ingest secret
 - GA page views plus search, Ask AI, download, and sign-in events
+- Public Privacy and Terms pages linked in the footer
+- `robots.txt` and a dynamic sitemap for public pages/articles
+- Ask AI sends only public titles, topics, summaries, and abstracts to its
+  answer provider
 
 ## Security and privacy completed
 
@@ -99,8 +103,8 @@ Most of these cannot be finished from code review alone.
 - [ ] Sign in with Google as a student and download one file
 - [ ] Confirm GA4 Realtime sees a visit
 
-Follow-up items (www TLS, Privacy/Terms pages, OAuth publish, retention) are
-tracked in [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
+Follow-up items (www TLS, OAuth publish, account 2FA, and retention automation)
+are tracked in [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
 
 ## Optional, not blocking the site
 
@@ -108,6 +112,5 @@ tracked in [SECURITY_PRIVACY_BACKLOG.md](./SECURITY_PRIVACY_BACKLOG.md).
   Google’s first screen (paid plan)
 - Remove `OPENAI_API_KEY` from Vercel if it is still a Groq `gsk_…` value
 - Render Markdown in Ask AI answers if `**bold**` markers are distracting
-- Add Terms and Privacy pages before broad public promotion
 - Set `ANALYTICS_HASH_SALT` so visitor hashes do not rotate when admin/ingest
   secrets change
