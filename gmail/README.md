@@ -104,8 +104,9 @@ wording, and filenames cannot ground article copy. If no readable attachment
 text exists, Auto-fill stops with a review warning instead of inventing a
 summary. Generated claims and tags that do not overlap the source are rejected.
 Long extracted documents are capped before they reach Groq so Auto-fill remains
-within the developer-tier token-per-minute limit; the original full notes stay
-in the draft.
+within the developer-tier token-per-minute limit; the extracted article text
+stays in the Editor draft for review, but is not rendered on public article
+pages.
 
 ## Limits & caveats
 

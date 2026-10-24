@@ -36,13 +36,24 @@ export function MaterialAccess({
 
   const next = `/posts/${slug}`;
 
+  if (!hasFile) {
+    return (
+      <div className="panel panel--soft" style={{ marginTop: "28px" }}>
+        <p className="feature__title">Original file unavailable</p>
+        <p className="card__desc">
+          This article does not have a downloadable original file yet.
+        </p>
+      </div>
+    );
+  }
+
   if (!loggedIn) {
     return (
       <div className="panel panel--soft" style={{ marginTop: "28px" }}>
-        <p className="feature__title">Full notes & downloads</p>
+        <p className="feature__title">Download original file</p>
         <p className="card__desc" style={{ marginBottom: "16px" }}>
-          Summaries, search, and Ask AI stay free. Sign in with Google to open
-          the full notes{hasFile ? " and download the original file" : ""}.
+          The article summary, Search, and Ask AI stay free. Sign in with
+          Google to download {fileName || "the original file"}.
         </p>
         <Link
           href={`/auth/login?next=${encodeURIComponent(next)}`}
@@ -57,23 +68,18 @@ export function MaterialAccess({
 
   return (
     <div className="panel" style={{ marginTop: "28px" }}>
-      <p className="feature__title">Signed in — materials unlocked</p>
+      <p className="feature__title">Original file ready</p>
       <p className="card__desc" style={{ marginBottom: "16px" }}>
-        Full notes are shown below
-        {hasFile
-          ? `. You can also download ${fileName || "the original file"}.`
-          : ". (No original file was attached for this article yet.)"}
+        You can download {fileName || "the original file"}.
       </p>
-      {hasFile && (
-        <a
-          href={`/api/download/${postId}`}
-          className="btn btn--primary"
-          onClick={() => trackEvent("file_download", { post_id: postId })}
-        >
-          Download {fileName || "file"}
-          <Icon name="arrow-right" />
-        </a>
-      )}
+      <a
+        href={`/api/download/${postId}`}
+        className="btn btn--primary"
+        onClick={() => trackEvent("file_download", { post_id: postId })}
+      >
+        Download {fileName || "file"}
+        <Icon name="arrow-right" />
+      </a>
     </div>
   );
 }

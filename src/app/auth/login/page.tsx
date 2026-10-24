@@ -57,7 +57,7 @@ function LoginForm() {
         <h1 className="section__title">Sign in to download</h1>
         <p className="section__lead">
           Browse summaries, search, and Ask AI are free for everyone. Sign in
-          with Google to download original files and read the full notes.
+          with Google to download original files.
         </p>
 
         <div className="panel form">

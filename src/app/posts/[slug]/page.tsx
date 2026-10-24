@@ -34,7 +34,6 @@ export default async function PostPage({
 
   const user = await getSessionUser();
   const isLoggedIn = Boolean(user);
-  const paragraphs = post.content.split("\n\n").filter(Boolean);
   const abstractParagraphs = (post.abstract ?? "")
     .split("\n\n")
     .map((p) => p.trim())
@@ -86,23 +85,6 @@ export default async function PostPage({
             fileName={post.fileName}
             isLoggedIn={isLoggedIn}
           />
-
-          {isLoggedIn ? (
-            <div className="prose" style={{ marginTop: "32px" }}>
-              <h2 className="feature__title">Full notes</h2>
-              {paragraphs.map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
-            </div>
-          ) : (
-            <div className="prose" style={{ marginTop: "32px" }}>
-              <p style={{ color: "var(--text-muted)" }}>
-                Sign in to read the full notes and download the original
-                PDF/PPTX. The abstract, search, and Ask AI remain available
-                without an account.
-              </p>
-            </div>
-          )}
         </article>
 
         <div className="panel panel--soft" style={{ marginTop: "48px" }}>

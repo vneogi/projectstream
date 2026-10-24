@@ -40,9 +40,9 @@ export default function PrivacyPage() {
           <h2>Google sign-in</h2>
           <p>
             Google sign-in is handled through Supabase. We use the resulting
-            account session to unlock full notes and original-file downloads.
-            We do not display your Google profile on published articles and do
-            not receive your Google password.
+            account session to unlock original-file downloads. We do not
+            display your Google profile on published articles and do not
+            receive your Google password.
           </p>
 
           <h2>Search, Ask AI, and usage analytics</h2>

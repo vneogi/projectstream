@@ -12,7 +12,6 @@ each page and capability does for learners and for the Editor.
 | Browse, Search, About, Submit | Yes | Yes | Yes |
 | Read article abstract / summary | Yes | Yes | Yes |
 | Ask AI | Yes | Yes | Yes |
-| Read full notes | No | Yes | Yes (via public page) |
 | Download original file | No | Yes | Yes |
 | Create / edit / publish / delete articles | No | No | Yes |
 | See usage dashboard | No | No | Yes |
@@ -49,8 +48,9 @@ Always shows:
 - A download control (locked until Google sign-in)
 - Links to Search by topic and to Ask AI / Share your work
 
-After Google sign-in, the same page also shows the full notes and unlocks the
-original file download. The public like button was removed.
+After Google sign-in, the same page unlocks the original-file download. The
+article body is retained for Editor review and internal processing, but is not
+rendered publicly. The public like button was removed.
 
 Article views are counted for the Editor dashboard.
 
@@ -125,7 +125,8 @@ The usage table (`usage_events`) is private. Browser roles cannot read it.
 
 Create or update a draft/published article. The Editor can:
 
-- Set title, subject, topics, summary, abstract, and full notes
+- Set title, subject, topics, summary, abstract, and article content for
+  Editor review and internal processing
 - Attach or replace the original file (including on the first save)
 - Run **Auto-fill** (title, subject, 6–12 searchable topics, summary, abstract)
   from extracted document text only
@@ -175,6 +176,6 @@ articles.
 
 1. Find a topic via Home, Browse, Search, or Ask AI.
 2. Read the abstract without an account.
-3. Sign in with Google to read the full notes and download the original.
+3. Sign in with Google to download the original file where available.
 4. Email their own notes if they want to contribute. Publication is never
    automatic.

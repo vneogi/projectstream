@@ -11,7 +11,8 @@ Remaining operational decisions are tracked in
 
 - Submissions are **reviewed before they are published**.
 - Students are asked **not** to put name, email, or phone in article text.
-- Full notes and original files require Google sign-in.
+- Original files require Google sign-in; stored article text is not publicly
+  rendered.
 - Browser clients cannot query drafts, emails, likes, or usage events.
 - Raw IP addresses are **not** stored in first-party analytics.
 - GA4 is configured with `anonymize_ip`.
@@ -22,7 +23,7 @@ Remaining operational decisions are tracked in
 | Data | Where | Why | Who can see it |
 |------|-------|-----|----------------|
 | Published title, summary, abstract, topics | Supabase `posts` | Library cards and Search | Public site |
-| Full notes | `posts.content` | Signed-in reading | Signed-in students; Editor |
+| Stored article text | `posts.content` | Editor review, Search, and internal processing | Editor / server |
 | Original files | Private `materials` bucket | Download after login | Signed-in students via signed URL; Editor |
 | Source Gmail message id / sender | `posts.source_*` | Deduping ingest | Editor / server only |
 | Google user id (Auth) | Supabase Auth | Session, downloads | Server; not shown on articles |

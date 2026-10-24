@@ -73,9 +73,9 @@ export default function TermsPage() {
 
           <h2>Accounts and downloads</h2>
           <p>
-            Google sign-in is used to protect full notes and original files.
-            You are responsible for the security of your Google account. Do
-            not redistribute files when you do not have permission from their
+            Google sign-in is used to protect original files. You are
+            responsible for the security of your Google account. Do not
+            redistribute files when you do not have permission from their
             creator.
           </p>
 

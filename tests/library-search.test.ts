@@ -151,6 +151,26 @@ describe("rankPostsForQuery", () => {
     assert.ok(suggestions.every((post) => post.subjectSlug === "biology"));
   });
 
+  it("suggests physics articles for an unpublished quantum question", () => {
+    const physics = searchPosts("").filter((post) => post.subjectSlug === "physics");
+    const suggestions = suggestPostsForQuery(
+      physics,
+      "Can you explain quantum chromodynamics?",
+    );
+    assert.ok(suggestions.length > 0);
+    assert.ok(suggestions.every((post) => post.subjectSlug === "physics"));
+  });
+
+  it("suggests biology articles for an uncovered heart question", () => {
+    const biology = searchPosts("").filter((post) => post.subjectSlug === "biology");
+    const suggestions = suggestPostsForQuery(
+      biology,
+      "How does the cardiovascular system work?",
+    );
+    assert.ok(suggestions.length > 0);
+    assert.ok(suggestions.every((post) => post.subjectSlug === "biology"));
+  });
+
   it("builds Ask AI context without protected full notes", () => {
     const post = searchPosts("")[0];
     assert.ok(post);

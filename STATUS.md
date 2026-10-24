@@ -29,7 +29,7 @@ Privacy handling: [PRIVACY.md](./PRIVACY.md).
 - Homepage, Browse, subject pages, article pages
 - Search by question, keyword, subject, or topic
 - Psychology, Design, Other, Engineering, and General STEM categories
-- Public abstracts; full notes and original-file downloads after Google login
+- Public abstracts; original-file downloads after Google login
 - Published articles appear without a redeploy
 - Public like button removed (legacy `like_count` / `post_likes` may remain)
 

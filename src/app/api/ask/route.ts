@@ -30,7 +30,7 @@ function fallbackAnswer(posts: Post[]): string {
     })
     .join("\n\n");
 
-  return `Here is what our library says, in simple language:\n\n${body}\n\nOpen the source articles below for the full notes.`;
+  return `Here is what our library says, in simple language:\n\n${body}\n\nOpen the source articles below to explore further.`;
 }
 
 export async function POST(request: Request) {

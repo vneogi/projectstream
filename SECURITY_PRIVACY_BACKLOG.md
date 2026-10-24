@@ -27,7 +27,7 @@ Implemented model: [SECURITY.md](./SECURITY.md) and [PRIVACY.md](./PRIVACY.md).
 - Ask AI no longer invents website how-tos; unpublished topics use a fixed
   sentence plus optional similar-topic cards
 - Ask AI sends only public article metadata, summaries, and abstracts to the
-  answer provider; protected full notes remain behind Google sign-in
+  answer provider; stored article text is not rendered on public article pages
 - Auto-fill grounded in extracted document text; OCR failure does not invent
   copy
 - Email metadata excluded from article Content

@@ -29,7 +29,7 @@ Accept for now (tracked in the backlog):
 |---------|------------|
 | Home, Browse, Search, Ask AI, About, Submit | Public |
 | Article abstract / summary | Public |
-| Full notes | Google session required |
+| Stored article text | Not rendered on public article pages |
 | Original file download | Google session + server-signed Storage URL (60s) |
 | Editor | Signed cookie tied to `ADMIN_PASSWORD` |
 | Gmail ingest | `INGEST_SECRET` on `/api/ingest/email` and `/api/ingest/upload` |

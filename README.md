@@ -36,7 +36,7 @@ homepage, Browse, Search, and Ask AI.
 | Search by question, topic, or keyword | Auto-fill title, subject, tags, summary, abstract |
 | Ask AI answers grounded in published articles | Usage dashboard (questions, views, downloads) |
 | Read abstracts without signing in | Upload or replace source files |
-| Sign in with Google to read full notes and download originals | Publish, unpublish, delete |
+| Sign in with Google to download originals | Publish, unpublish, delete |
 
 See [WEBSITE.md](./WEBSITE.md) for a page-by-page description.
 

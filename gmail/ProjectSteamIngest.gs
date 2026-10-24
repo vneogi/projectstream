@@ -525,7 +525,10 @@ function convertPdfToDocText_(blob, useOcr) {
     : { convert: true };
   var file = Drive.Files.insert(resource, blob, options);
   try {
-    return readGoogleDocTextWithRetry_(file.id, useOcr ? "PDF OCR" : "PDF conversion");
+    return readGoogleDocTextWithRetry_(
+      file.id,
+      useOcr ? "PDF OCR" : "PDF conversion",
+    );
   } finally {
     try {
       Drive.Files.remove(file.id);
@@ -591,11 +594,13 @@ function extractImageText_(blob) {
 /**
  * Drive conversion may return before Docs/OCR has populated the body. Reading
  * immediately was producing empty text for otherwise valid PDFs and images.
+ * Some conversions populate Drive's text export before DocumentApp can open
+ * the body, so each retry tries both paths.
  */
 function readGoogleDocTextWithRetry_(fileId, label) {
   var lastText = "";
   var lastError = null;
-  for (var attempt = 1; attempt <= 5; attempt++) {
+  for (var attempt = 1; attempt <= 8; attempt++) {
     try {
       lastText = DocumentApp.openById(fileId).getBody().getText() || "";
       var cleaned = cleanText_(lastText);
@@ -608,16 +613,35 @@ function readGoogleDocTextWithRetry_(fileId, label) {
     } catch (err) {
       lastError = err;
     }
-    if (attempt < 5) Utilities.sleep(attempt * 1000);
+
+    var exported = exportTemporaryGoogleDocText_(fileId, label, attempt);
+    if (exported) return exported;
+
+    if (attempt < 8) Utilities.sleep(attempt * 1000);
   }
   Logger.log(
     label +
-      " produced no readable text after 5 attempts (chars=" +
+      " produced no readable text after 8 attempts (chars=" +
       cleanText_(lastText).length +
       (lastError ? ", error=" + lastError : "") +
       ")",
   );
   return lastText;
+}
+
+/** Read conversion output through the Drive export endpoint as a fallback. */
+function exportTemporaryGoogleDocText_(fileId, label, attempt) {
+  try {
+    var blob = Drive.Files.export(fileId, "text/plain");
+    var text = cleanText_(blob.getDataAsString());
+    if (text.length >= 20 && !looksLikeGarbage_(text)) {
+      Logger.log(label + " export succeeded on attempt " + attempt);
+      return text;
+    }
+  } catch (err) {
+    Logger.log(label + " export failed on attempt " + attempt + ": " + err);
+  }
+  return "";
 }
 
 /** XLS/XLSX/CSV → temporary Google Sheet → cell text */

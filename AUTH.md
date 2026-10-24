@@ -23,7 +23,6 @@ that the domain or login still need to be wired from scratch.
 | Browse / subjects / search | No |
 | Article **summary** (excerpt) | No |
 | Ask AI | No |
-| **Full notes** text | **Yes** |
 | **PDF / PPTX download** | **Yes** |
 
 ---
@@ -201,7 +200,7 @@ Both are required.
 3. Click **Sign in** → **Continue with Google**
 4. Pick a Google account that is in your OAuth **Test users** list (while app is in Testing)
 5. After success you should land back on the site, signed in
-6. Open any article → you should see full notes / download unlock
+6. Open any article → the original-file download should unlock
 
 ### If login fails
 

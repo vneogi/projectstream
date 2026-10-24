@@ -40,6 +40,15 @@ describe("enrichSubmission (fallback, no LLM)", () => {
     assert.ok(result.abstract.length > 0);
   });
 
+  it("classifies cardiovascular study material as biology", () => {
+    assert.equal(
+      inferSubjectFromText(
+        "The heart pumps blood through blood vessels in the cardiovascular system.",
+      ),
+      "biology",
+    );
+  });
+
   it("explains why AI did not run so admins are not left guessing", async () => {
     const result = await enrichSubmission(
       "Long enough student notes about refraction of light for a Class 10 project.",
